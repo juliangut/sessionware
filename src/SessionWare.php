@@ -208,17 +208,17 @@ class SessionWare
             // @codeCoverageIgnoreEnd
         }
 
-        $savePath = sys_get_temp_dir();
-        if (session_save_path() !== '') {
-            $savePath = rtrim(session_save_path(), DIRECTORY_SEPARATOR);
-        }
+        $savePath = trim($this->settings['savePath']);
+        if ($savePath === '') {
+            $savePath = sys_get_temp_dir();
+            if (session_save_path() !== '') {
+                $savePath = rtrim(session_save_path(), DIRECTORY_SEPARATOR);
+            }
 
-        if (trim($this->settings['savePath']) !== '') {
-            $savePath = trim($this->settings['savePath']);
-        } elseif ($this->sessionName !== 'PHPSESSID'
-            && $this->sessionName !== array_pop(explode(DIRECTORY_SEPARATOR, $savePath))
-        ) {
-            $savePath .= DIRECTORY_SEPARATOR . $this->sessionName;
+            $savePathParts = explode(DIRECTORY_SEPARATOR, $savePath);
+            if ($this->sessionName !== 'PHPSESSID' && $this->sessionName !== array_pop($savePathParts)) {
+                $savePath .= DIRECTORY_SEPARATOR . $this->sessionName;
+            }
         }
 
         if (!@mkdir($savePath, 0775, true) && (!is_dir($savePath) || !is_writable($savePath))) {
