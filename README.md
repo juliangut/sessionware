@@ -1,6 +1,6 @@
 [![PHP version](https://img.shields.io/badge/PHP-%3E%3D5.5-8892BF.svg?style=flat-square)](http://php.net)
 [![Latest Version](https://img.shields.io/packagist/vpre/juliangut/sessionware.svg?style=flat-square)](https://packagist.org/packages/juliangut/sessionware)
-[![License](https://img.shields.io/github/license//sessionware.svg?style=flat-square)](https://github.com//sessionware/blob/master/LICENSE)
+[![License](https://img.shields.io/github/license/juliangut/sessionware.svg?style=flat-square)](https://github.com//sessionware/blob/master/LICENSE)
 
 [![Build status](https://img.shields.io/travis/juliangut/sessionware.svg?style=flat-square)](https://travis-ci.org/juliangut/sessionware)
 [![Style](https://styleci.io/repos/56336022/shield)](https://styleci.io/repos/56336022)
