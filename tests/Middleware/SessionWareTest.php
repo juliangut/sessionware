@@ -10,8 +10,8 @@
 namespace Jgut\Middleware\Sessionware\Tests;
 
 use Jgut\Middleware\SessionWare;
-use Zend\Diactoros\ServerRequestFactory;
 use Zend\Diactoros\Response;
+use Zend\Diactoros\ServerRequestFactory;
 
 /**
  * PHP session handler middleware test class.
