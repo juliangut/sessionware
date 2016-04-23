@@ -102,10 +102,10 @@ class SessionWare
      * @param ResponseInterface      $response
      * @param callable               $next
      *
-     * @return ResponseInterface
-     *
      * @throws \InvalidArgumentException
      * @throws \RuntimeException
+     *
+     * @return ResponseInterface
      */
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response, callable $next)
     {
@@ -277,9 +277,9 @@ class SessionWare
      *
      * @param ResponseInterface $response
      *
-     * @return ResponseInterface
-     *
      * @throws \InvalidArgumentException
+     *
+     * @return ResponseInterface
      */
     protected function respondWithSessionCookie(ResponseInterface $response)
     {
@@ -288,7 +288,7 @@ class SessionWare
                 'expires=%s; max-age=%s',
                 gmdate('D, d M Y H:i:s T', $_SESSION[$this->getSessionTimeoutControlKey()]),
                 $this->sessionLifetime
-            )
+            ),
         ];
 
         if (trim($this->settings['path']) !== '') {
@@ -321,9 +321,9 @@ class SessionWare
     /**
      * Retrieve session timeout control key.
      *
-     * @return string
-     *
      * @throws \InvalidArgumentException
+     *
+     * @return string
      */
     protected function getSessionTimeoutControlKey()
     {

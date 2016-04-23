@@ -244,7 +244,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
     {
         $middleware = new SessionWare([
             'name' => 'SessionWareSession',
-            'lifetime' => SessionWare::SESSION_LIFETIME_SHORT
+            'lifetime' => SessionWare::SESSION_LIFETIME_SHORT,
         ]);
 
         $middleware($this->request, $this->response, $this->callback);
