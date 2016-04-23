@@ -1,6 +1,6 @@
 {
   "name": "juliangut/sessionware",
-  "description": "PSR7 session manager middleware",
+  "description": "PSR7 session creation management middleware",
   "keywords": [
     "psr7",
     "session",
