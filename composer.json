@@ -18,15 +18,13 @@
   ],
   "support": {
     "source": "https://github.com/juliangut/sessionware",
-    "issues": "https://github.com/juliangut/sessionware/issues",
-    "wiki": "https://github.com/juliangut/sessionware/wiki"
+    "issues": "https://github.com/juliangut/sessionware/issues"
   },
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
     "php": ">=5.5",
     "symfony/polyfill-php56": "^1.0",
-    "paragonie/random_compat": "^1.0",
     "symfony/polyfill-php70": "^1.0",
     "psr/http-message": "^1.0"
   },
@@ -35,8 +33,7 @@
     "phpunit/phpunit": "^4.5|^5.0",
     "sebastian/phpcpd": "^2.0",
     "sensiolabs/security-checker": "^3.0",
-    "squizlabs/php_codesniffer": "^2",
-    "vinkla/climb": "^0.8",
+    "squizlabs/php_codesniffer": "^2.0",
     "zendframework/zend-diactoros": "^1.3"
   },
   "suggest": {
