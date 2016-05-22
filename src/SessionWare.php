@@ -157,13 +157,7 @@ class SessionWare
 
         session_start();
 
-        // Populate session with initial parameters if they don't exist
-        foreach ($this->initialSessionParams as $parameter => $value) {
-            if (!array_key_exists($parameter, $_SESSION)) {
-                $_SESSION[$parameter] = $value;
-            }
-        }
-
+        $this->populateSession();
         $this->manageSessionTimeout();
     }
 
@@ -208,7 +202,26 @@ class SessionWare
             // @codeCoverageIgnoreEnd
         }
 
+        $savePath = $this->getSessionSavePath();
+
+        if (!@mkdir($savePath, 0775, true) && (!is_dir($savePath) || !is_writable($savePath))) {
+            throw new \RuntimeException(
+                sprintf('Failed to create session save path "%s", or directory is not writable', $savePath)
+            );
+        }
+
+        session_save_path($savePath);
+    }
+
+    /**
+     * Return session save path to be used.
+     *
+     * @return string
+     */
+    protected function getSessionSavePath()
+    {
         $savePath = trim($this->settings['savePath']);
+
         if ($savePath === '') {
             $savePath = sys_get_temp_dir();
             if (session_save_path() !== '') {
@@ -221,13 +234,7 @@ class SessionWare
             }
         }
 
-        if (!@mkdir($savePath, 0775, true) && (!is_dir($savePath) || !is_writable($savePath))) {
-            throw new \RuntimeException(
-                sprintf('Failed to create session save path "%s", or directory is not writable', $savePath)
-            );
-        }
-
-        session_save_path($savePath);
+        return $savePath;
     }
 
     /**
@@ -247,6 +254,18 @@ class SessionWare
 
         // Signal garbage collector with defined timeout
         ini_set('session.gc_maxlifetime', $lifetime);
+    }
+
+    /**
+     * Populate session with initial parameters if they don't exist.
+     */
+    protected function populateSession()
+    {
+        foreach ($this->initialSessionParams as $parameter => $value) {
+            if (!array_key_exists($parameter, $_SESSION)) {
+                $_SESSION[$parameter] = $value;
+            }
+        }
     }
 
     /**
