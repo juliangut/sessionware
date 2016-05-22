@@ -24,7 +24,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
     protected $request;
 
     /**
-     * @var \Zend\Diactoros\Response
+     * @var Response
      */
     protected $response;
 
@@ -43,7 +43,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
             session_destroy();
         }
 
-        // High probability to launch garbage collector
+        // Set a high probability to launch garbage collector
         ini_set('session.gc_probability', 1);
         ini_set('session.gc_divisor', 4);
 
@@ -76,12 +76,17 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
      */
     public function testSessionTimeoutControlKey()
     {
-        $middleware = new SessionWare(['name' => 'SessionWareSession', 'timeoutKey' => '__TIMEOUT__']);
+        $defaultTimeout = time() - SessionWare::SESSION_LIFETIME_EXTENDED;
+        $middleware = new SessionWare(
+            ['name' => 'SessionWareSession', 'timeoutKey' => '__TIMEOUT__'],
+            ['__TIMEOUT__' => $defaultTimeout]
+        );
 
         $middleware($this->request, $this->response, $this->callback);
 
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());
         self::assertTrue(array_key_exists('__TIMEOUT__', $_SESSION));
+        self::assertNotEquals($_SESSION['__TIMEOUT__'], $defaultTimeout);
     }
 
     /**
@@ -104,7 +109,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
     {
         $middleware = new SessionWare(['name' => 'SessionWareSession']);
 
-        /** @var \Zend\Diactoros\Request $response */
+        /** @var Response $response */
         $response = $middleware($this->request, $this->response, $this->callback);
 
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());
@@ -136,7 +141,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
         $middleware = new SessionWare(['name' => 'SessionWareSession']);
 
-        /** @var \Zend\Diactoros\Request $response */
+        /** @var Response $response */
         $response = $middleware($request, $this->response, $this->callback);
 
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());
@@ -293,7 +298,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
             'httponly' => true,
         ]);
 
-        /** @var \Zend\Diactoros\Request $response */
+        /** @var Response $response */
         $response = $middleware($this->request, $this->response, $this->callback);
 
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());

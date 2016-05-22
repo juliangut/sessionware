@@ -4,7 +4,7 @@ module.exports.tasks = {
   phpmd: {
     options: {
       bin: 'vendor/bin/phpmd',
-      rulesets: 'unusedcode,naming,design,controversial,codesize',
+      rulesets: 'phpmd.xml',
       reportFormat: 'text'
     },
     application: {

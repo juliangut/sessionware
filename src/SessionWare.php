@@ -157,14 +157,14 @@ class SessionWare
 
         session_start();
 
-        $this->manageSessionTimeout();
-
-        // Populate session with initial parameters
+        // Populate session with initial parameters if they don't exist
         foreach ($this->initialSessionParams as $parameter => $value) {
             if (!array_key_exists($parameter, $_SESSION)) {
                 $_SESSION[$parameter] = $value;
             }
         }
+
+        $this->manageSessionTimeout();
     }
 
     /**
@@ -189,7 +189,7 @@ class SessionWare
             : session_id();
 
         if (trim($sessionId) === '') {
-            $sessionId = $this->generateSessionId();
+            $sessionId = self::generateSessionId();
         }
 
         session_id($sessionId);
@@ -262,9 +262,7 @@ class SessionWare
             session_unset();
             session_destroy();
 
-            // Regenerate session identifier
-            $sessionId = $this->generateSessionId();
-            session_id($sessionId);
+            self::regenerateSessionId();
 
             session_start();
         }
@@ -338,13 +336,21 @@ class SessionWare
     }
 
     /**
+     * Regenerate session id with cryptographically secure session identifier
+     */
+    final public static function regenerateSessionId()
+    {
+        session_id(self::generateSessionId());
+    }
+
+    /**
      * Generates cryptographically secure session identifier.
      *
      * @param int $length
      *
      * @return string
      */
-    final protected function generateSessionId($length = 80)
+    final protected static function generateSessionId($length = 80)
     {
         return substr(
             preg_replace('/[^a-zA-Z0-9-]+/', '', base64_encode(random_bytes((int) $length))),

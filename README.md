@@ -14,11 +14,17 @@ A PSR7 session creation management middleware.
 
 Generates a 80 character long session_id using `random_bytes()`, a truly cryptographically secure pseudo-random generator, instead of `session.hash_function` hash algorithm.
 
-#### Considerations
+#### Important considerations
 
-Be aware that this middleware prevents `session_start()` from automatically send any kind of header to the client (including session cookie and caching). Middleware attaches a `Set-Cookie` header to the response object instead.
+Be aware that this middleware prevents `session_start()` and PHP session mechanisms from automatically send any kind of header to the client (including session cookie and caching). Middleware appends a `Set-Cookie` header to the response object instead.
 
-Value of `session.cache_limiter` and `session.cache_expire` get discarded and it is the developer's responsibility to include corresponding cache headers in response object, which should be the case in the first place and not relying on PHP environment settings.
+By using `session_regenerate_id` during execution cryptographically secure session ID will be replaced by default PHP `session.hash_function` (not so secure) generated ID. To prevent this from happening use SessionWare provided method instead.
+
+```php
+\Jgut\Middleware\SessionWare::regenerateSessionId();
+```
+
+Value of `session.cache_limiter` and `session.cache_expire` get discarded so no cache headers are sent. **It's the developer's responsibility to include corresponding cache headers in response object**, which should be the case in the first place instead of relying on PHP environment settings. Typically this headers would include `Expires`, `Cache-Control` and `Pragma`
 
 ## Installation
 
