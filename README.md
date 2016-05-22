@@ -10,9 +10,9 @@
 
 # SessionWare
 
-A PSR7 session creation management middleware.
+A PSR7 session management middleware.
 
-Generates a 80 character long session_id using `random_bytes()`, a truly cryptographically secure pseudo-random generator, instead of `session.hash_function` hash algorithm.
+Generates a 80 character long session_id using `random_bytes`, a truly cryptographically secure pseudo-random generator, instead of `session.hash_function` hash algorithm.
 
 #### Important considerations
 
