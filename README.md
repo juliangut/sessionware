@@ -16,7 +16,7 @@ Generates a 80 character long session_id using `random_bytes`, a truly cryptogra
 
 #### Important considerations
 
-Be aware that this middleware prevents `session_start()` and PHP session mechanisms from automatically send any kind of header to the client (including session cookie and caching). Middleware appends a `Set-Cookie` header to the response object instead.
+Be aware that this middleware prevents `session_start` and PHP session mechanisms from automatically send any kind of header to the client (including session cookie and caching). Middleware appends a `Set-Cookie` header to the response object instead.
 
 By using `session_regenerate_id` during execution cryptographically secure session ID will be replaced by default PHP `session.hash_function` (not so secure) generated ID. To prevent this from happening use SessionWare provided method instead.
 
@@ -24,7 +24,9 @@ By using `session_regenerate_id` during execution cryptographically secure sessi
 \Jgut\Middleware\SessionWare::regenerateSessionId();
 ```
 
-Value of `session.cache_limiter` and `session.cache_expire` get discarded so no cache headers are sent. **It's the developer's responsibility to include corresponding cache headers in response object**, which should be the case in the first place instead of relying on PHP environment settings. Typically this headers would include `Expires`, `Cache-Control` and `Pragma`
+Value of `session.cache_limiter` and `session.cache_expire` get discarded so no cache headers are sent. **It's the developer's responsibility to include corresponding cache headers in response object**, which should be the case in the first place instead of relying on PHP environment settings.
+
+> You can use [juliangut/cacheware](https://github.com/juliangut/cacheware) which will automatically add the corresponding cache headers to response object.
 
 ## Installation
 
@@ -46,7 +48,7 @@ $configuration = [
   'lifetime' => 1800, // 30 minutes
 ];
 
-$sessionMiddleware = new Sessionware($configuration);
+$sessionMiddleware = new SessionWare($configuration);
 
 // Get $request and $response from PSR7 implementation
 $request = new Request();
@@ -73,14 +75,14 @@ $defaultSessionParams = [
 ]
 
 $app = new \YourMiddlewareAwareApplication();
-$app->addMiddleware(new Sessionware($configuration, $defaultParameters));
+$app->addMiddleware(new SessionWare($configuration, $defaultParameters));
 $app->run();
 ```
 
 ### Config
 
 ```php
-$sessionMiddleware = new Sessionware([
+$sessionMiddleware = new SessionWare([
   'timeoutKey' => '__SESSIONWARE_TIMEOUT_TIMESTAMP__'
   'name' => 'SessionWareSession',
   'savePath' => '/tmp/SessionWareSession',
