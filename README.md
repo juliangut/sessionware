@@ -12,6 +12,8 @@
 
 A PSR7 session management middleware.
 
+Automatic control of session timeout.
+
 Generates a 80 character long session_id using `random_bytes`, a truly cryptographically secure pseudo-random generator, instead of `session.hash_function` hash algorithm.
 
 #### Important considerations
@@ -130,6 +132,25 @@ There are six session lifetime constants available for convenience:
 #### domain, path, secure and httponly
 
 Shortcuts to `session.cookie_domain`, `session.cookie_path`, `session.cookie_secure` and `session.cookie_httponly`. If not provided configured cookie params will be used, so can be set using `session_set_cookie_params()` before middleware run.
+
+## Events
+
+You can listen to timeout events to perform actions accordingly. There are currently two events
+
+* `pre.session_timeout` triggered right before session is wiped when session timeout is reached
+* `post.session_timeout` triggered right after session has been restarted due to session timeout
+
+Events provide sessionId as parameter:
+
+```php
+$sessionware = new SessionWare($configuration);
+$sessionware->addListener('pre.session_timeout', function($sessionId) {
+    echo sprintf('session "%s" timed out', $sessionId);
+})
+$sessionware->addListener('post.session_timeout', function($sessionId) {
+    echo sprintf('new session "%s" created', $sessionId);
+})
+```
 
 ## Important note
 
