@@ -83,12 +83,12 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
         );
 
         $sessionHolder = new \stdClass();
-        $middleware->addListener('pre.session_timeout', function($sessionId) use ($sessionHolder) {
+        $middleware->addListener('pre.session_timeout', function ($sessionId) use ($sessionHolder) {
             $sessionHolder->id = $sessionId;
         });
 
         $assert = $this;
-        $middleware->addListener('post.session_timeout', function($sessionId) use ($assert, $sessionHolder) {
+        $middleware->addListener('post.session_timeout', function ($sessionId) use ($assert, $sessionHolder) {
             $assert::assertNotNull($sessionHolder->id);
             $assert::assertNotEquals($sessionHolder->id, $sessionId);
         });
