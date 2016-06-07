@@ -82,6 +82,17 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
             ['__TIMEOUT__' => $defaultTimeout]
         );
 
+        $sessionHolder = new \stdClass();
+        $middleware->addListener('pre.session_timeout', function($sessionId) use ($sessionHolder) {
+            $sessionHolder->id = $sessionId;
+        });
+
+        $assert = $this;
+        $middleware->addListener('post.session_timeout', function($sessionId) use ($assert, $sessionHolder) {
+            $assert::assertNotNull($sessionHolder->id);
+            $assert::assertNotEquals($sessionHolder->id, $sessionId);
+        });
+
         $middleware($this->request, $this->response, $this->callback);
 
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());
@@ -147,6 +158,19 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());
         self::assertEquals('madeUpSessionId', session_id());
         self::assertNotSame(strpos($response->getHeaderLine('Set-Cookie'), 'madeUpSessionId'), false);
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testGeneratedSessionId()
+    {
+        $middleware = new SessionWare(['name' => 'SessionWareSession']);
+
+        $middleware($this->request, $this->response, $this->callback);
+
+        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
+        self::assertEquals(80, strlen(session_id()));
     }
 
     /**

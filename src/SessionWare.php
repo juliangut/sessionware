@@ -9,14 +9,19 @@
 
 namespace Jgut\Middleware;
 
+use League\Event\EmitterAwareInterface;
+use League\Event\EmitterTrait;
+use League\Event\Event;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * PHP session handler middleware.
  */
-class SessionWare
+class SessionWare implements EmitterAwareInterface
 {
+    use EmitterTrait;
+
     const SESSION_LIFETIME_FLASH    = 300; // 5 minutes
     const SESSION_LIFETIME_SHORT    = 600; // 10 minutes
     const SESSION_LIFETIME_NORMAL   = 900; // 15 minutes
@@ -278,12 +283,16 @@ class SessionWare
         $timeoutKey = $this->getSessionTimeoutControlKey();
 
         if (array_key_exists($timeoutKey, $_SESSION) && $_SESSION[$timeoutKey] < time()) {
+            $this->emit(Event::named('pre.session_timeout'), session_id());
+
             session_unset();
             session_destroy();
 
             self::regenerateSessionId();
 
             session_start();
+
+            $this->emit(Event::named('post.session_timeout'), session_id());
         }
 
         $_SESSION[$timeoutKey] = time() + $this->sessionLifetime;
