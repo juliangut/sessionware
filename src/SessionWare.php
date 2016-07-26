@@ -168,9 +168,9 @@ class SessionWare implements EmitterAwareInterface
     /**
      * Configure session name.
      *
-     * @throws \InvalidArgumentException
-     *
      * @param array $settings
+     *
+     * @throws \InvalidArgumentException
      */
     protected function configureSessionName(array $settings)
     {
