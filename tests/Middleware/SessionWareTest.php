@@ -76,11 +76,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
      */
     public function testSessionTimeoutControlKey()
     {
-        $defaultTimeout = time() - SessionWare::SESSION_LIFETIME_EXTENDED;
-        $middleware = new SessionWare(
-            ['name' => 'SessionWareSession', 'timeoutKey' => '__TIMEOUT__'],
-            ['__TIMEOUT__' => $defaultTimeout]
-        );
+        $middleware = new SessionWare(['name' => 'SessionWareSession', 'timeoutKey' => '__TIMEOUT__']);
 
         $sessionHolder = new \stdClass();
         $middleware->addListener('pre.session_timeout', function ($sessionId) use ($sessionHolder) {
@@ -95,9 +91,15 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
         $middleware($this->request, $this->response, $this->callback);
 
+        $limitTimeout = time() - SessionWare::SESSION_LIFETIME_EXTENDED;
+        $_SESSION['__TIMEOUT__'] = $limitTimeout;
+        session_write_close();
+
+        $middleware($this->request, $this->response, $this->callback);
+
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());
         self::assertTrue(array_key_exists('__TIMEOUT__', $_SESSION));
-        self::assertNotEquals($_SESSION['__TIMEOUT__'], $defaultTimeout);
+        self::assertNotEquals($_SESSION['__TIMEOUT__'], $limitTimeout);
     }
 
     /**
@@ -109,6 +111,19 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
     public function testSessionErrorTimeoutControlKey()
     {
         $middleware = new SessionWare(['name' => 'SessionWareSession', 'timeoutKey' => '  ']);
+
+        $middleware($this->request, $this->response, $this->callback);
+    }
+
+    /**
+     * @runInSeparateProcess
+     *
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Session name must be a non empty string
+     */
+    public function testEmptySessionName()
+    {
+        $middleware = new SessionWare(['name' => '']);
 
         $middleware($this->request, $this->response, $this->callback);
     }
@@ -171,6 +186,19 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());
         self::assertEquals(80, strlen(session_id()));
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testSessionEmptySavePath()
+    {
+        $middleware = new SessionWare(['name' => 'SessionWareSession', 'savePath' => '']);
+
+        $middleware($this->request, $this->response, $this->callback);
+
+        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
+        self::assertTrue(is_dir(sys_get_temp_dir() . '/SessionWareSession'));
     }
 
     /**
@@ -328,10 +356,45 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());
 
         $cookieHeader = $response->getHeaderLine('Set-Cookie');
-        self::assertTrue(strpos($cookieHeader, 'SessionWare') !== false);
+        self::assertTrue(strpos($cookieHeader, 'SessionWareSession') !== false);
         self::assertTrue(strpos($cookieHeader, 'http://example.com') !== false);
         self::assertTrue(strpos($cookieHeader, 'path') !== false);
         self::assertTrue(strpos($cookieHeader, 'secure') !== false);
         self::assertTrue(strpos($cookieHeader, 'httponly') !== false);
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testSessionEndedCookieParams()
+    {
+        $middleware = new SessionWare([
+            'name' => 'SessionWareSession',
+            'lifetime' => 300,
+            'domain' => 'http://example.com',
+        ]);
+        $expiration = gmdate('D, d M Y H:i:s T', time() - 300);
+
+        /** @var Response $response */
+        $response = $middleware(
+            $this->request,
+            $this->response,
+            function ($request, $response) {
+                $_SESSION = [];
+
+                // Serialization is not allowed in PHPUnit running on a separate process
+                //session_unset();
+                //session_destroy();
+
+                return $response;
+            }
+        );
+
+        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
+
+        $cookieHeader = $response->getHeaderLine('Set-Cookie');
+        self::assertTrue(strpos($cookieHeader, 'SessionWareSession') !== false);
+        self::assertTrue(strpos($cookieHeader, 'http://example.com') !== false);
+        self::assertTrue(strpos($cookieHeader, $expiration) !== false);
     }
 }

@@ -29,19 +29,8 @@ class SessionWare implements EmitterAwareInterface
     const SESSION_LIFETIME_EXTENDED = 3600; // 1 hour
     const SESSION_LIFETIME_INFINITE = PHP_INT_MAX; // Around 1145 years (x86_64)
 
+    const SESSION_KEY = 'session';
     const TIMEOUT_CONTROL_KEY = '__SESSIONWARE_TIMEOUT_TIMESTAMP__';
-
-    /**
-     * Default session settings.
-     *
-     * @var array
-     */
-    protected static $defaultSettings = [
-        'name' => null,
-        'savePath' => null,
-        'lifetime' => self::SESSION_LIFETIME_DEFAULT,
-        'timeoutKey' => self::TIMEOUT_CONTROL_KEY,
-    ];
 
     /**
      * @var array
@@ -64,6 +53,11 @@ class SessionWare implements EmitterAwareInterface
     protected $sessionLifetime;
 
     /**
+     * @var string
+     */
+    protected $sessionTimeoutKey;
+
+    /**
      * Middleware constructor.
      *
      * @param array $settings
@@ -71,33 +65,9 @@ class SessionWare implements EmitterAwareInterface
      */
     public function __construct(array $settings = [], array $initialSessionParams = [])
     {
-        $this->settings = array_merge(
-            self::$defaultSettings,
-            $this->getSessionParams(),
-            $settings
-        );
+        $this->settings = $settings;
 
         $this->initialSessionParams = $initialSessionParams;
-    }
-
-    /**
-     * Retrieve default session parameters.
-     *
-     * @return array
-     */
-    protected function getSessionParams()
-    {
-        $lifeTime = (int) ini_get('session.cookie_lifetime') === 0
-            ? (int) ini_get('session.gc_maxlifetime')
-            : min(ini_get('session.cookie_lifetime'), ini_get('session.gc_maxlifetime'));
-
-        return [
-            'lifetime' => $lifeTime > 0 ? $lifeTime : self::$defaultSettings['lifetime'],
-            'domain' => ini_get('session.cookie_domain'),
-            'path' => ini_get('session.cookie_path'),
-            'secure' => ini_get('session.cookie_secure'),
-            'httponly' => ini_get('session.cookie_httponly'),
-        ];
     }
 
     /**
@@ -114,7 +84,7 @@ class SessionWare implements EmitterAwareInterface
      */
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response, callable $next)
     {
-        $this->startSession($request->getCookieParams());
+        $this->startSession($request);
 
         $response = $next($request, $response);
 
@@ -124,12 +94,12 @@ class SessionWare implements EmitterAwareInterface
     /**
      * Configure session settings.
      *
-     * @param array $requestCookies
+     * @param ServerRequestInterface $request
      *
      * @throws \InvalidArgumentException
      * @throws \RuntimeException
      */
-    protected function startSession(array $requestCookies = [])
+    protected function startSession(ServerRequestInterface $request)
     {
         if (session_status() === PHP_SESSION_DISABLED) {
             // @codeCoverageIgnoreStart
@@ -138,118 +108,140 @@ class SessionWare implements EmitterAwareInterface
         }
 
         if (session_status() === PHP_SESSION_ACTIVE) {
-            throw new \RuntimeException('Session has already been started, review "session.auto_start" ini set');
+            throw new \RuntimeException('Session has already been started, review "session.auto_start" ini setting');
         }
 
-        $this->configureSessionName();
-        $this->configureSessionId($requestCookies);
-        $this->configureSessionSavePath();
-        $this->configureSessionTimeout();
+        $sessionSettings = $sessionSettings = $this->getSessionSettings($this->settings);
 
-        // Use better session serializer when available
-        if (ini_get('session.serialize_handler') === 'php' && version_compare(PHP_VERSION, '5.5.4', '>=')) {
-            // @codeCoverageIgnoreStart
-            ini_set('session.serialize_handler', 'php_serialize');
-            // @codeCoverageIgnoreEnd
-        }
+        // First configure session name
+        $this->configureSessionName($sessionSettings);
 
-        // Prevent headers from being automatically sent to client
-        ini_set('session.use_trans_sid', false);
-        ini_set('session.use_cookies', false);
-        ini_set('session.use_only_cookies', true);
-        ini_set('session.use_strict_mode', false);
-        ini_set('session.cache_limiter', '');
+        $this->configureSessionCookies($sessionSettings);
+        $this->configureSessionSavePath($sessionSettings);
+        $this->configureSessionTimeout($sessionSettings);
+        $this->configureSessionSerializer();
+        $this->configureSessionHeaders();
+
+        $this->configureSessionId($request);
 
         session_start();
 
-        $this->populateSession();
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            // @codeCoverageIgnoreStart
+            throw new \RuntimeException('Session could not be started');
+            // @codeCoverageIgnoreEnd
+        }
+
         $this->manageSessionTimeout();
+
+        $this->populateSession($this->initialSessionParams);
+    }
+
+    /**
+     * Retrieve default session parameters.
+     *
+     * @param array $customSettings
+     *
+     * @return array
+     */
+    protected function getSessionSettings(array $customSettings)
+    {
+        $lifeTime = (int) $this->getSessionSetting('cookie_lifetime') === 0
+            ? (int) $this->getSessionSetting('gc_maxlifetime')
+            : min($this->getSessionSetting('cookie_lifetime'), (int) $this->getSessionSetting('gc_maxlifetime'));
+
+        $defaultSettings = [
+            'name'             => $this->getSessionSetting('name', 'PHPSESSID'),
+            'path'             => $this->getSessionSetting('cookie_path'),
+            'domain'           => $this->getSessionSetting('cookie_domain', '/'),
+            'secure'           => $this->getSessionSetting('cookie_secure'),
+            'httponly'         => $this->getSessionSetting('cookie_httponly'),
+            'savePath'         => $this->getSessionSetting('save_path', sys_get_temp_dir()),
+            'lifetime'         => $lifeTime > 0 ? $lifeTime : static::SESSION_LIFETIME_DEFAULT,
+            'sessionKey'       => static::SESSION_KEY,
+            'timeoutKey'       => static::TIMEOUT_CONTROL_KEY,
+        ];
+
+        return array_merge($defaultSettings, $customSettings);
     }
 
     /**
      * Configure session name.
-     */
-    protected function configureSessionName()
-    {
-        $this->sessionName = trim($this->settings['name']) !== '' ? trim($this->settings['name']) : session_name();
-
-        session_name($this->sessionName);
-    }
-
-    /**
-     * Configure session identifier.
      *
-     * @param array $requestCookies
+     * @throws \InvalidArgumentException
+     *
+     * @param array $settings
      */
-    protected function configureSessionId(array $requestCookies = [])
+    protected function configureSessionName(array $settings)
     {
-        $sessionId = !empty($requestCookies[$this->sessionName])
-            ? $requestCookies[$this->sessionName]
-            : session_id();
-
-        if (trim($sessionId) === '') {
-            $sessionId = self::generateSessionId();
+        if (trim($settings['name']) === '') {
+            throw new \InvalidArgumentException('Session name must be a non empty string');
         }
 
-        session_id($sessionId);
+        $this->sessionName = trim($settings['name']);
+
+        $this->setSessionSetting('name', $this->sessionName);
     }
 
     /**
-     * Configure session save path.
+     * Configure session cookies parameters.
+     *
+     * @param array $settings
+     */
+    protected function configureSessionCookies(array $settings)
+    {
+        $this->setSessionSetting('cookie_path', $settings['path']);
+        $this->setSessionSetting('cookie_domain', $settings['domain']);
+        $this->setSessionSetting('cookie_secure', $settings['secure']);
+        $this->setSessionSetting('cookie_httponly', $settings['httponly']);
+    }
+
+    /**
+     * Configure session save path if using default PHP session save handler.
+     *
+     * @param array $settings
      *
      * @throws \RuntimeException
      */
-    protected function configureSessionSavePath()
+    protected function configureSessionSavePath(array $settings)
     {
-        if (ini_get('session.save_handler') !== 'files') {
+        if ($this->getSessionSetting('save_handler') !== 'files') {
             // @codeCoverageIgnoreStart
             return;
             // @codeCoverageIgnoreEnd
         }
 
-        $savePath = $this->getSessionSavePath();
+        $savePath = trim($settings['savePath']);
+        if ($savePath === '') {
+            $savePath = sys_get_temp_dir();
+        }
 
-        if (!@mkdir($savePath, 0775, true) && (!is_dir($savePath) || !is_writable($savePath))) {
+        $savePathParts = explode(DIRECTORY_SEPARATOR, rtrim($savePath, DIRECTORY_SEPARATOR));
+        if ($this->sessionName !== 'PHPSESSID' && $this->sessionName !== array_pop($savePathParts)) {
+            $savePath .= DIRECTORY_SEPARATOR . $this->sessionName;
+        }
+
+        if ($savePath !== sys_get_temp_dir()
+            && !@mkdir($savePath, 0775, true) && (!is_dir($savePath) || !is_writable($savePath))
+        ) {
             throw new \RuntimeException(
                 sprintf('Failed to create session save path "%s", or directory is not writable', $savePath)
             );
         }
 
-        session_save_path($savePath);
-    }
-
-    /**
-     * Return session save path to be used.
-     *
-     * @return string
-     */
-    protected function getSessionSavePath()
-    {
-        $savePath = trim($this->settings['savePath']);
-
-        if ($savePath === '') {
-            $savePath = sys_get_temp_dir();
-            if (session_save_path() !== '') {
-                $savePath = rtrim(session_save_path(), DIRECTORY_SEPARATOR);
-            }
-
-            $savePathParts = explode(DIRECTORY_SEPARATOR, $savePath);
-            if ($this->sessionName !== 'PHPSESSID' && $this->sessionName !== array_pop($savePathParts)) {
-                $savePath .= DIRECTORY_SEPARATOR . $this->sessionName;
-            }
-        }
-
-        return $savePath;
+        $this->setSessionSetting('save_path', $savePath);
     }
 
     /**
      * Configure session timeout.
      *
+     * @param array $settings
+     *
      * @throws \InvalidArgumentException
      */
-    protected function configureSessionTimeout()
+    protected function configureSessionTimeout(array $settings)
     {
-        $lifetime = (int) $this->settings['lifetime'];
+        $lifetime = (int) $settings['lifetime'];
 
         if ($lifetime < 1) {
             throw new \InvalidArgumentException(sprintf('"%s" is not a valid session lifetime', $lifetime));
@@ -257,20 +249,63 @@ class SessionWare implements EmitterAwareInterface
 
         $this->sessionLifetime = $lifetime;
 
+        $timeoutKey = trim($settings['timeoutKey']);
+        if ($timeoutKey === '') {
+            throw new \InvalidArgumentException(
+                sprintf('"%s" is not a valid session timeout control key name', $settings['timeoutKey'])
+            );
+        }
+
+        $this->sessionTimeoutKey = $timeoutKey;
+
         // Signal garbage collector with defined timeout
-        ini_set('session.gc_maxlifetime', $lifetime);
+        $this->setSessionSetting('gc_maxlifetime', $lifetime);
     }
 
     /**
-     * Populate session with initial parameters if they don't exist.
+     * Configure session serialize handler.
      */
-    protected function populateSession()
+    protected function configureSessionSerializer()
     {
-        foreach ($this->initialSessionParams as $parameter => $value) {
-            if (!array_key_exists($parameter, $_SESSION)) {
-                $_SESSION[$parameter] = $value;
-            }
+        // Use better session serializer when available
+        if ($this->getSessionSetting('serialize_handler') === 'php' && version_compare(PHP_VERSION, '5.5.4', '>=')) {
+            // @codeCoverageIgnoreStart
+            $this->setSessionSetting('serialize_handler', 'php_serialize');
+            // @codeCoverageIgnoreEnd
         }
+    }
+
+    /**
+     * Prevent headers from being automatically sent to client on session start.
+     */
+    protected function configureSessionHeaders()
+    {
+        $this->setSessionSetting('use_trans_sid', false);
+        $this->setSessionSetting('use_cookies', true);
+        $this->setSessionSetting('use_only_cookies', true);
+        $this->setSessionSetting('use_strict_mode', false);
+        $this->setSessionSetting('cache_limiter', '');
+    }
+
+    /**
+     * Configure session identifier.
+     *
+     * @param ServerRequestInterface $request
+     */
+    protected function configureSessionId(ServerRequestInterface $request)
+    {
+        $requestCookies = $request->getCookieParams();
+
+        $sessionId = array_key_exists($this->sessionName, $requestCookies)
+            && trim($requestCookies[$this->sessionName]) !== ''
+                ? trim($requestCookies[$this->sessionName])
+                : session_id();
+
+        if (trim($sessionId) === '') {
+            $sessionId = static::generateSessionId();
+        }
+
+        session_id($sessionId);
     }
 
     /**
@@ -280,22 +315,35 @@ class SessionWare implements EmitterAwareInterface
      */
     protected function manageSessionTimeout()
     {
-        $timeoutKey = $this->getSessionTimeoutControlKey();
-
-        if (array_key_exists($timeoutKey, $_SESSION) && $_SESSION[$timeoutKey] < time()) {
+        if (array_key_exists($this->sessionTimeoutKey, $_SESSION) && $_SESSION[$this->sessionTimeoutKey] < time()) {
             $this->emit(Event::named('pre.session_timeout'), session_id());
 
+            $_SESSION = [];
             session_unset();
             session_destroy();
 
-            self::regenerateSessionId();
+            session_id(static::generateSessionId());
 
             session_start();
 
             $this->emit(Event::named('post.session_timeout'), session_id());
         }
 
-        $_SESSION[$timeoutKey] = time() + $this->sessionLifetime;
+        $_SESSION[$this->sessionTimeoutKey] = time() + $this->sessionLifetime;
+    }
+
+    /**
+     * Populate session with initial parameters if they don't exist.
+     *
+     * @param array $initialSessionParams
+     */
+    protected function populateSession(array $initialSessionParams)
+    {
+        foreach ($initialSessionParams as $parameter => $value) {
+            if (!array_key_exists($parameter, $_SESSION)) {
+                $_SESSION[$parameter] = $value;
+            }
+        }
     }
 
     /**
@@ -309,27 +357,33 @@ class SessionWare implements EmitterAwareInterface
      */
     protected function respondWithSessionCookie(ResponseInterface $response)
     {
+        if (session_status() !== PHP_SESSION_ACTIVE || !array_key_exists($this->sessionTimeoutKey, $_SESSION)) {
+            $expireTime = time() - $this->sessionLifetime;
+        } else {
+            $expireTime = $_SESSION[$this->sessionTimeoutKey];
+        }
+
         $cookieParams = [
             sprintf(
                 'expires=%s; max-age=%s',
-                gmdate('D, d M Y H:i:s T', $_SESSION[$this->getSessionTimeoutControlKey()]),
+                gmdate('D, d M Y H:i:s T', $expireTime),
                 $this->sessionLifetime
             ),
         ];
 
-        if (trim($this->settings['path']) !== '') {
-            $cookieParams[] = 'path=' . $this->settings['path'];
+        if (trim($this->getSessionSetting('cookie_path')) !== '') {
+            $cookieParams[] = 'path=' . $this->getSessionSetting('cookie_path');
         }
 
-        if (trim($this->settings['domain']) !== '') {
-            $cookieParams[] = 'domain=' . $this->settings['domain'];
+        if (trim($this->getSessionSetting('cookie_domain')) !== '') {
+            $cookieParams[] = 'domain=' . $this->getSessionSetting('cookie_domain');
         }
 
-        if ((bool) $this->settings['secure']) {
+        if ((bool) $this->getSessionSetting('cookie_secure')) {
             $cookieParams[] = 'secure';
         }
 
-        if ((bool) $this->settings['httponly']) {
+        if ((bool) $this->getSessionSetting('cookie_httponly')) {
             $cookieParams[] = 'httponly';
         }
 
@@ -345,45 +399,62 @@ class SessionWare implements EmitterAwareInterface
     }
 
     /**
-     * Retrieve session timeout control key.
-     *
-     * @throws \InvalidArgumentException
-     *
-     * @return string
-     */
-    protected function getSessionTimeoutControlKey()
-    {
-        $timeoutKey = trim($this->settings['timeoutKey']);
-        if ($timeoutKey === '') {
-            throw new \InvalidArgumentException(
-                sprintf('"%s" is not a valid session timeout control key name', $this->settings['timeoutKey'])
-            );
-        }
-
-        return $timeoutKey;
-    }
-
-    /**
-     * Regenerate session id with cryptographically secure session identifier
-     */
-    final public static function regenerateSessionId()
-    {
-        session_id(self::generateSessionId());
-    }
-
-    /**
      * Generates cryptographically secure session identifier.
      *
      * @param int $length
      *
      * @return string
      */
-    final protected static function generateSessionId($length = 80)
+    final public static function generateSessionId($length = 80)
     {
         return substr(
             preg_replace('/[^a-zA-Z0-9-]+/', '', base64_encode(random_bytes((int) $length))),
             0,
             (int) $length
         );
+    }
+
+    /**
+     * Retrieve session ini setting.
+     *
+     * @param string     $setting
+     * @param null|mixed $default
+     *
+     * @return null|string
+     */
+    private function getSessionSetting($setting, $default = null)
+    {
+        $param = ini_get($this->normalizeSessionSettingName($setting));
+
+        if (is_numeric($param)) {
+            return (int) $param;
+        }
+
+        $param = trim($param);
+
+        return $param !== '' ? $param : $default;
+    }
+
+    /**
+     * Set session ini setting.
+     *
+     * @param string $setting
+     * @param mixed  $value
+     */
+    private function setSessionSetting($setting, $value)
+    {
+        ini_set($this->normalizeSessionSettingName($setting), $value);
+    }
+
+    /**
+     * Normalize session setting name to start with 'session.'.
+     *
+     * @param string $setting
+     *
+     * @return string
+     */
+    private function normalizeSessionSettingName($setting)
+    {
+        return strpos($setting, 'session.') !== 0 ? 'session.' . $setting : $setting;
     }
 }
