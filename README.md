@@ -20,10 +20,10 @@ Generates a 80 character long session_id using `random_bytes`, a truly cryptogra
 
 Be aware that this middleware prevents `session_start` and PHP session mechanisms from automatically send any kind of header to the client (including session cookie and caching). Middleware appends a `Set-Cookie` header to the response object instead.
 
-By using `session_regenerate_id` during execution cryptographically secure session ID will be replaced by default PHP `session.hash_function` (not so secure) generated ID. To prevent this from happening use SessionWare provided method instead.
+By using `session_regenerate_id()` during execution cryptographically secure session ID will be replaced by default PHP `session.hash_function` generated ID (not really secure). To prevent this from happening use `\Jgut\Middleware\Session` helper method `regenerateSessionId()` instead:
 
 ```php
-\Jgut\Middleware\SessionWare::regenerateSessionId();
+\Jgut\Middleware\Session::regenerateSessionId();
 ```
 
 Value of `session.cache_limiter` and `session.cache_expire` get discarded so no cache headers are sent. **It's the developer's responsibility to include corresponding cache headers in response object**, which should be the case in the first place instead of relying on PHP environment settings.
@@ -81,6 +81,20 @@ $app->addMiddleware(new SessionWare($configuration, $defaultParameters));
 $app->run();
 ```
 
+#### Session helper
+
+There is an extra Session helper to abstract access to the $_SESSION variable. This is usefull for example when NOT accessing global variables is important for you (such as when using PHP_MD to statically analise your code)
+
+In order to benefit from SessionWare cryptographically secure generated session id DO use
+
+```
+$session = new \Jgut\Middleware\Session;
+$session->regenerate();
+
+// Or can be called statically
+\Jgut\Middleware\Session::regenerateSessionId()
+```
+
 ### Config
 
 ```php
@@ -96,9 +110,14 @@ $sessionMiddleware = new SessionWare([
 ]);
 ```
 
+> Default values mimic those provided by default PHP installation so the middleware can be used as a direct drop-in with automatic session timeout control 
+
 #### timeoutKey
 
-Parameter stored in session array to control session validity according to `lifetime` parameter. Defaults to `SessionWare::TIMEOUT_CONTROL_KEY = '__SESSIONWARE_TIMEOUT_TIMESTAMP__'`
+Parameter stored in session array to control session validity according to `lifetime` parameter. Defaults to 
+```
+\Jgut\Middleware\SessionWare::TIMEOUT_CONTROL_KEY = '__SESSIONWARE_TIMEOUT_TIMESTAMP__';
+```
 
 _It is advised not to change this value unless it conflicts with one of your own session keys (which is unlikely if not directly impossible)_
 
@@ -129,9 +148,9 @@ There are six session lifetime constants available for convenience:
 * SESSION_LIFETIME_EXTENDED = 1 hour
 * SESSION_LIFETIME_INFINITE = `PHP_INT_MAX`, around 1145 years on x86_64 architecture
 
-#### domain, path, secure and httponly
+#### path, domain, secure and httponly
 
-Shortcuts to `session.cookie_domain`, `session.cookie_path`, `session.cookie_secure` and `session.cookie_httponly`. If not provided configured cookie params will be used, so can be set using `session_set_cookie_params()` before middleware run.
+Shortcuts to `session.cookie_path`, `session.cookie_domain`, `session.cookie_secure` and `session.cookie_httponly`. If not provided configured cookie params will be used, so can be set using `session_set_cookie_params()` before middleware run.
 
 ## Events
 
