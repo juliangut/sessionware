@@ -29,8 +29,7 @@ class SessionWare implements EmitterAwareInterface
     const SESSION_LIFETIME_EXTENDED = 3600; // 1 hour
     const SESSION_LIFETIME_INFINITE = PHP_INT_MAX; // Around 1145 years (x86_64)
 
-    const SESSION_KEY = 'session';
-    const TIMEOUT_CONTROL_KEY = '__SESSIONWARE_TIMEOUT_TIMESTAMP__';
+    const SESSION_TIMEOUT_KEY_DEFAULT = '__SESSIONWARE_TIMEOUT_TIMESTAMP__';
 
     /**
      * @var array
@@ -111,16 +110,20 @@ class SessionWare implements EmitterAwareInterface
             throw new \RuntimeException('Session has already been started, review "session.auto_start" ini setting');
         }
 
-        $sessionSettings = $sessionSettings = $this->getSessionSettings($this->settings);
+        // @codeCoverageIgnoreStart
+        if (php_sapi_name() !== 'cli') {
+            $this->verifySessionSettings();
+        }
+        // @codeCoverageIgnoreEnd
 
-        // First configure session name
+        $sessionSettings = array_merge($this->getSessionSettings(), $this->settings);
+
         $this->configureSessionName($sessionSettings);
 
         $this->configureSessionCookies($sessionSettings);
         $this->configureSessionSavePath($sessionSettings);
         $this->configureSessionTimeout($sessionSettings);
         $this->configureSessionSerializer();
-        $this->configureSessionHeaders();
 
         $this->configureSessionId($request);
 
@@ -138,19 +141,47 @@ class SessionWare implements EmitterAwareInterface
     }
 
     /**
-     * Retrieve default session parameters.
+     * Verify session ini settings.
      *
-     * @param array $customSettings
+     * @throws \RuntimeException
+     *
+     * @codeCoverageIgnore
+     */
+    final protected function verifySessionSettings()
+    {
+        if ($this->getSessionSetting('use_trans_sid') !== false) {
+            throw new \RuntimeException('"session.use_trans_sid" ini setting must be set to false');
+        }
+
+        if ($this->getSessionSetting('use_cookies') !== true) {
+            throw new \RuntimeException('"session.use_cookies" ini setting must be set to false');
+        }
+
+        if ($this->getSessionSetting('use_only_cookies') !== true) {
+            throw new \RuntimeException('"session.use_only_cookies" ini setting must be set to false');
+        }
+
+        if ($this->getSessionSetting('use_strict_mode') !== false) {
+            throw new \RuntimeException('"session.use_strict_mode" ini setting must be set to false');
+        }
+
+        if ($this->getSessionSetting('cache_limiter') !== null) {
+            throw new \RuntimeException('"session.cache_limiter" ini setting must be set to false');
+        }
+    }
+
+    /**
+     * Retrieve default session settings.
      *
      * @return array
      */
-    protected function getSessionSettings(array $customSettings)
+    protected function getSessionSettings()
     {
         $lifeTime = (int) $this->getSessionSetting('cookie_lifetime') === 0
             ? (int) $this->getSessionSetting('gc_maxlifetime')
             : min($this->getSessionSetting('cookie_lifetime'), (int) $this->getSessionSetting('gc_maxlifetime'));
 
-        $defaultSettings = [
+        return [
             'name'             => $this->getSessionSetting('name', 'PHPSESSID'),
             'path'             => $this->getSessionSetting('cookie_path'),
             'domain'           => $this->getSessionSetting('cookie_domain', '/'),
@@ -158,11 +189,8 @@ class SessionWare implements EmitterAwareInterface
             'httponly'         => $this->getSessionSetting('cookie_httponly'),
             'savePath'         => $this->getSessionSetting('save_path', sys_get_temp_dir()),
             'lifetime'         => $lifeTime > 0 ? $lifeTime : static::SESSION_LIFETIME_DEFAULT,
-            'sessionKey'       => static::SESSION_KEY,
-            'timeoutKey'       => static::TIMEOUT_CONTROL_KEY,
+            'timeoutKey'       => static::SESSION_TIMEOUT_KEY_DEFAULT,
         ];
-
-        return array_merge($defaultSettings, $customSettings);
     }
 
     /**
@@ -225,7 +253,7 @@ class SessionWare implements EmitterAwareInterface
             && !@mkdir($savePath, 0775, true) && (!is_dir($savePath) || !is_writable($savePath))
         ) {
             throw new \RuntimeException(
-                sprintf('Failed to create session save path "%s", or directory is not writable', $savePath)
+                sprintf('Failed to create session save path at "%s", directory might not be write enabled', $savePath)
             );
         }
 
@@ -244,7 +272,7 @@ class SessionWare implements EmitterAwareInterface
         $lifetime = (int) $settings['lifetime'];
 
         if ($lifetime < 1) {
-            throw new \InvalidArgumentException(sprintf('"%s" is not a valid session lifetime', $lifetime));
+            throw new \InvalidArgumentException('Session lifetime must be at least 1');
         }
 
         $this->sessionLifetime = $lifetime;
@@ -276,18 +304,6 @@ class SessionWare implements EmitterAwareInterface
     }
 
     /**
-     * Prevent headers from being automatically sent to client on session start.
-     */
-    protected function configureSessionHeaders()
-    {
-        $this->setSessionSetting('use_trans_sid', false);
-        $this->setSessionSetting('use_cookies', true);
-        $this->setSessionSetting('use_only_cookies', true);
-        $this->setSessionSetting('use_strict_mode', false);
-        $this->setSessionSetting('cache_limiter', '');
-    }
-
-    /**
      * Configure session identifier.
      *
      * @param ServerRequestInterface $request
@@ -296,16 +312,9 @@ class SessionWare implements EmitterAwareInterface
     {
         $requestCookies = $request->getCookieParams();
 
-        $sessionId = array_key_exists($this->sessionName, $requestCookies)
-            && trim($requestCookies[$this->sessionName]) !== ''
-                ? trim($requestCookies[$this->sessionName])
-                : session_id();
-
-        if (trim($sessionId) === '') {
-            $sessionId = static::generateSessionId();
+        if (array_key_exists($this->sessionName, $requestCookies) && trim($requestCookies[$this->sessionName]) !== '') {
+            session_id(trim($requestCookies[$this->sessionName]));
         }
-
-        session_id($sessionId);
     }
 
     /**
@@ -325,6 +334,8 @@ class SessionWare implements EmitterAwareInterface
             session_id(static::generateSessionId());
 
             session_start();
+
+            $this->sessionId = session_id();
 
             $this->emit(Event::named('post.session_timeout'), session_id());
         }
@@ -418,21 +429,21 @@ class SessionWare implements EmitterAwareInterface
      * Retrieve session ini setting.
      *
      * @param string     $setting
-     * @param null|mixed $default
+     * @param mixed|null $default
      *
-     * @return null|string
+     * @return mixed
      */
     private function getSessionSetting($setting, $default = null)
     {
-        $param = ini_get($this->normalizeSessionSettingName($setting));
+        $setting = ini_get($this->normalizeSessionSettingName($setting));
 
-        if (is_numeric($param)) {
-            return (int) $param;
+        if (is_numeric($setting)) {
+            return (int) $setting;
         }
 
-        $param = trim($param);
+        $setting = trim($setting);
 
-        return $param !== '' ? $param : $default;
+        return $setting !== '' ? $setting : $default;
     }
 
     /**

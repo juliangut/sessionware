@@ -116,7 +116,7 @@ $sessionMiddleware = new SessionWare([
 
 Parameter stored in session array to control session validity according to `lifetime` parameter. Defaults to 
 ```
-\Jgut\Middleware\SessionWare::TIMEOUT_CONTROL_KEY = '__SESSIONWARE_TIMEOUT_TIMESTAMP__';
+\Jgut\Middleware\SessionWare::SESSION_TIMEOUT_KEY_DEFAULT = '__SESSIONWARE_TIMEOUT_TIMESTAMP__';
 ```
 
 _It is advised not to change this value unless it conflicts with one of your own session keys (which is unlikely if not directly impossible)_

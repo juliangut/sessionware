@@ -38,14 +38,14 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
      */
     public function setUp()
     {
+        // Set a high probability to launch garbage collector
+        ini_set('session.gc_probability', 1);
+        ini_set('session.gc_divisor', 4);
+
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_unset();
             session_destroy();
         }
-
-        // Set a high probability to launch garbage collector
-        ini_set('session.gc_probability', 1);
-        ini_set('session.gc_divisor', 4);
 
         $this->request = ServerRequestFactory::fromGlobals();
         $this->response = new Response;
@@ -185,7 +185,6 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
         $middleware($this->request, $this->response, $this->callback);
 
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertEquals(80, strlen(session_id()));
     }
 
     /**
@@ -314,7 +313,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
      * @runInSeparateProcess
      *
      * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage "0" is not a valid session lifetime
+     * @expectedExceptionMessage Session lifetime must be at least 1
      */
     public function testSessionErrorTimeout()
     {
