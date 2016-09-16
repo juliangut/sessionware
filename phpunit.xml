@@ -18,11 +18,10 @@
          stopOnSkipped="false"
          stopOnIncomplete="false"
          stopOnRisky="false"
-         syntaxCheck="false"
          verbose="true"
 >
     <testsuites>
-        <testsuite>
+        <testsuite name="sessionware test suite">
             <directory suffix="Test.php">tests/Middleware/</directory>
         </testsuite>
     </testsuites>
