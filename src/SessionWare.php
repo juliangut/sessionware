@@ -155,19 +155,19 @@ class SessionWare implements EmitterAwareInterface
      */
     final protected function verifySessionSettings()
     {
-        if ($this->getSessionSetting('use_trans_sid') !== false) {
+        if ((bool) $this->getSessionSetting('use_trans_sid') !== false) {
             throw new \RuntimeException('"session.use_trans_sid" ini setting must be set to false');
         }
 
-        if ($this->getSessionSetting('use_cookies') !== true) {
+        if ((bool) $this->getSessionSetting('use_cookies') !== true) {
             throw new \RuntimeException('"session.use_cookies" ini setting must be set to false');
         }
 
-        if ($this->getSessionSetting('use_only_cookies') !== true) {
+        if ((bool) $this->getSessionSetting('use_only_cookies') !== true) {
             throw new \RuntimeException('"session.use_only_cookies" ini setting must be set to false');
         }
 
-        if ($this->getSessionSetting('use_strict_mode') !== false) {
+        if ((bool) $this->getSessionSetting('use_strict_mode') !== false) {
             throw new \RuntimeException('"session.use_strict_mode" ini setting must be set to false');
         }
 
