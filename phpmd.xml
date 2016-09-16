@@ -155,7 +155,7 @@
     <!-- Excessive WMC, time and effort to modify and maintain class (50) -->
     <rule ref="rulesets/codesize.xml/ExcessiveClassComplexity">
         <properties>
-            <property name="maximum" value="50"/>
+            <property name="maximum" value="60"/>
         </properties>
     </rule>
 </ruleset>
