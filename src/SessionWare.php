@@ -137,13 +137,13 @@ class SessionWare implements EmitterAwareInterface
             // @codeCoverageIgnoreEnd
         }
 
-        $this->manageSessionTimeout();
-
-        $this->populateSession($this->initialSessionParams);
-
         if (strlen(session_id()) !== static::SESSION_ID_LENGTH) {
             $this->recreateSession();
         }
+
+        $this->manageSessionTimeout();
+
+        $this->populateSession($this->initialSessionParams);
     }
 
     /**
@@ -333,13 +333,7 @@ class SessionWare implements EmitterAwareInterface
         if (array_key_exists($this->sessionTimeoutKey, $_SESSION) && $_SESSION[$this->sessionTimeoutKey] < time()) {
             $this->emit(Event::named('pre.session_timeout'), session_id());
 
-            $_SESSION = [];
-            session_unset();
-            session_destroy();
-
-            session_id(static::generateSessionId());
-
-            session_start();
+            $this->recreateSession();
 
             $this->emit(Event::named('post.session_timeout'), session_id());
         }
@@ -352,8 +346,6 @@ class SessionWare implements EmitterAwareInterface
      */
     protected function recreateSession()
     {
-        $sessionParams = $_SESSION;
-
         $_SESSION = [];
         session_unset();
         session_destroy();
@@ -361,10 +353,6 @@ class SessionWare implements EmitterAwareInterface
         session_id(SessionWare::generateSessionId());
 
         session_start();
-
-        foreach ($sessionParams as $param => $value) {
-            $_SESSION[$param] = $value;
-        }
     }
 
     /**
