@@ -56,6 +56,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      *
      * @expectedException \RuntimeException
      * @expectedExceptionMessageRegExp /^Session has already been started/
@@ -73,10 +74,17 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function testSessionTimeoutControlKey()
     {
         $middleware = new SessionWare(['name' => 'SessionWareSession', 'timeoutKey' => '__TIMEOUT__']);
+
+        $middleware($this->request, $this->response, $this->callback);
+
+        $limitTimeout = time() - SessionWare::SESSION_LIFETIME_EXTENDED;
+        $_SESSION['__TIMEOUT__'] = $limitTimeout;
+        session_write_close();
 
         $sessionHolder = new \stdClass();
         $middleware->addListener('pre.session_timeout', function ($sessionId) use ($sessionHolder) {
@@ -91,12 +99,6 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
         $middleware($this->request, $this->response, $this->callback);
 
-        $limitTimeout = time() - SessionWare::SESSION_LIFETIME_EXTENDED;
-        $_SESSION['__TIMEOUT__'] = $limitTimeout;
-        session_write_close();
-
-        $middleware($this->request, $this->response, $this->callback);
-
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());
         self::assertTrue(array_key_exists('__TIMEOUT__', $_SESSION));
         self::assertNotEquals($_SESSION['__TIMEOUT__'], $limitTimeout);
@@ -104,6 +106,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      *
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage "  " is not a valid session timeout
@@ -117,6 +120,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      *
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Session name must be a non empty string
@@ -130,6 +134,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function testSessionName()
     {
@@ -145,25 +150,32 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function testSessionIdFromFunction()
     {
-        session_id('madeUpSessionId');
+        $sessionId = SessionWare::generateSessionId();
+
+        session_id($sessionId);
 
         $middleware = new SessionWare(['name' => 'SessionWareSession']);
 
-        $middleware($this->request, $this->response, $this->callback);
+        /** @var Response $response */
+        $response = $middleware($this->request, $this->response, $this->callback);
 
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertEquals('madeUpSessionId', session_id());
+        self::assertNotSame(strpos($response->getHeaderLine('Set-Cookie'), $sessionId), false);
     }
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function testSessionIdFromRequest()
     {
-        $request = ServerRequestFactory::fromGlobals(null, null, null, ['SessionWareSession' => 'madeUpSessionId']);
+        $sessionId = SessionWare::generateSessionId();
+
+        $request = ServerRequestFactory::fromGlobals(null, null, null, ['SessionWareSession' => $sessionId]);
 
         $middleware = new SessionWare(['name' => 'SessionWareSession']);
 
@@ -171,12 +183,12 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
         $response = $middleware($request, $this->response, $this->callback);
 
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertEquals('madeUpSessionId', session_id());
-        self::assertNotSame(strpos($response->getHeaderLine('Set-Cookie'), 'madeUpSessionId'), false);
+        self::assertNotSame(strpos($response->getHeaderLine('Set-Cookie'), $sessionId), false);
     }
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function testGeneratedSessionId()
     {
@@ -189,6 +201,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function testSessionEmptySavePath()
     {
@@ -202,6 +215,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function testSessionSavePathFromFunction()
     {
@@ -219,6 +233,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function testSessionSavePathFromParameter()
     {
@@ -234,6 +249,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      *
      * @expectedException \RuntimeException
      * @expectedExceptionMessageRegExp /^Failed to create session save path/
@@ -247,6 +263,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function testSessionTimeoutDefault()
     {
@@ -263,6 +280,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function testSessionTimeoutByCookieLifetime()
     {
@@ -279,6 +297,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function testSessionTimeoutByMaxLifetime()
     {
@@ -295,6 +314,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function testSessionTimeoutByParameter()
     {
@@ -311,6 +331,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      *
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Session lifetime must be at least 1
@@ -324,6 +345,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function testSessionDefaultParams()
     {
@@ -337,6 +359,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function testSessionCookieParams()
     {
@@ -364,6 +387,7 @@ class SessionWareTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function testSessionEndedCookieParams()
     {

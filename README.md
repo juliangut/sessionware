@@ -18,17 +18,23 @@ Generates a 80 character long session_id using `random_bytes`, a truly cryptogra
 
 #### Important considerations
 
-Be aware that this middleware prevents `session_start` and PHP session mechanisms from automatically send any kind of header to the client (including session cookie and caching). Middleware appends a `Set-Cookie` header to the response object instead.
+Be aware that this middleware needs some session `ini` settings to be set to specific values:
+
+`session.use_trans_sid` to `false`
+`session.use_cookies` to `true`
+`session.use_only_cookies` to `true`
+`session.use_strict_mode` to `false`
+`session.cache_limiter` to '' (empty string)
+
+This values will prevent session headers to be automatically sent to user. **It's the developer's responsibility to include corresponding cache headers in response object**, which should be the case in the first place instead of relying on PHP environment settings.
+
+> You can use [juliangut/cacheware](https://github.com/juliangut/cacheware) which will automatically set the corrent session ini settings and add the corresponding cache headers to response object.
 
 By using `session_regenerate_id()` during execution cryptographically secure session ID will be replaced by default PHP `session.hash_function` generated ID (not really secure). To prevent this from happening use `\Jgut\Middleware\Session` helper method `regenerateSessionId()` instead:
 
 ```php
 \Jgut\Middleware\Session::regenerateSessionId();
 ```
-
-Value of `session.cache_limiter` and `session.cache_expire` get discarded so no cache headers are sent. **It's the developer's responsibility to include corresponding cache headers in response object**, which should be the case in the first place instead of relying on PHP environment settings.
-
-> You can use [juliangut/cacheware](https://github.com/juliangut/cacheware) which will automatically add the corresponding cache headers to response object.
 
 ## Installation
 

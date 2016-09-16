@@ -31,6 +31,8 @@ class SessionWare implements EmitterAwareInterface
 
     const SESSION_TIMEOUT_KEY_DEFAULT = '__SESSIONWARE_TIMEOUT_TIMESTAMP__';
 
+    const SESSION_ID_LENGTH = 80;
+
     /**
      * @var array
      */
@@ -138,6 +140,10 @@ class SessionWare implements EmitterAwareInterface
         $this->manageSessionTimeout();
 
         $this->populateSession($this->initialSessionParams);
+
+        if (strlen(session_id()) !== static::SESSION_ID_LENGTH) {
+            $this->recreateSession();
+        }
     }
 
     /**
@@ -335,12 +341,30 @@ class SessionWare implements EmitterAwareInterface
 
             session_start();
 
-            $this->sessionId = session_id();
-
             $this->emit(Event::named('post.session_timeout'), session_id());
         }
 
         $_SESSION[$this->sessionTimeoutKey] = time() + $this->sessionLifetime;
+    }
+
+    /**
+     * Close previous session and create a new empty one.
+     */
+    protected function recreateSession()
+    {
+        $sessionParams = $_SESSION;
+
+        $_SESSION = [];
+        session_unset();
+        session_destroy();
+
+        session_id(SessionWare::generateSessionId());
+
+        session_start();
+
+        foreach ($sessionParams as $param => $value) {
+            $_SESSION[$param] = $value;
+        }
     }
 
     /**
@@ -416,7 +440,7 @@ class SessionWare implements EmitterAwareInterface
      *
      * @return string
      */
-    final public static function generateSessionId($length = 80)
+    final public static function generateSessionId($length = self::SESSION_ID_LENGTH)
     {
         return substr(
             preg_replace('/[^a-zA-Z0-9-]+/', '', base64_encode(random_bytes((int) $length))),
