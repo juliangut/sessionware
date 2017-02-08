@@ -1,30 +1,33 @@
 <?php
-/**
- * SessionWare (https://github.com/juliangut/sessionware)
- * PSR7 session management middleware
+
+/*
+ * sessionware (https://github.com/juliangut/sessionware).
+ * PSR7 session management middleware.
  *
  * @license BSD-3-Clause
+ * @link https://github.com/juliangut/sessionware
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
 namespace Jgut\Middleware\Sessionware\Tests;
 
 use Jgut\Middleware\SessionWare;
+use PHPUnit\Framework\TestCase;
 use Zend\Diactoros\Response;
 use Zend\Diactoros\ServerRequestFactory;
 
 /**
  * PHP session handler middleware test class.
  */
-class SessionWareTest extends \PHPUnit_Framework_TestCase
+class SessionWareTest extends TestCase
 {
     /**
-     * @var \Zend\Diactoros\Request
+     * @var \Psr\Http\Message\ServerRequestInterface
      */
     protected $request;
 
     /**
-     * @var Response
+     * @var \Psr\Http\Message\ResponseInterface
      */
     protected $response;
 

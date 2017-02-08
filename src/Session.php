@@ -1,9 +1,11 @@
 <?php
-/**
- * SessionWare (https://github.com/juliangut/sessionware)
- * PSR7 session management middleware
+
+/*
+ * sessionware (https://github.com/juliangut/sessionware).
+ * PSR7 session management middleware.
  *
  * @license BSD-3-Clause
+ * @link https://github.com/juliangut/sessionware
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
@@ -11,6 +13,8 @@ namespace Jgut\Middleware;
 
 /**
  * Session helper.
+ *
+ * @SuppressWarnings(PHPMD.Superglobals)
  */
 class Session
 {

@@ -1,20 +1,23 @@
 <?php
-/**
- * SessionWare (https://github.com/juliangut/sessionware)
- * PSR7 session management middleware
+
+/*
+ * sessionware (https://github.com/juliangut/sessionware).
+ * PSR7 session management middleware.
  *
  * @license BSD-3-Clause
+ * @link https://github.com/juliangut/sessionware
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
 namespace Jgut\Middleware\Sessionware\Tests;
 
 use Jgut\Middleware\Session;
+use PHPUnit\Framework\TestCase;
 
 /**
  * PHP session helper test class.
  */
-class SessionTest extends \PHPUnit_Framework_TestCase
+class SessionTest extends TestCase
 {
     /**
      * @var Session

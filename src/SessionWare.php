@@ -1,9 +1,11 @@
 <?php
-/**
- * SessionWare (https://github.com/juliangut/sessionware)
- * PSR7 session management middleware
+
+/*
+ * sessionware (https://github.com/juliangut/sessionware).
+ * PSR7 session management middleware.
  *
  * @license BSD-3-Clause
+ * @link https://github.com/juliangut/sessionware
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
@@ -17,6 +19,8 @@ use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * PHP session handler middleware.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class SessionWare implements EmitterAwareInterface
 {
@@ -160,11 +164,11 @@ class SessionWare implements EmitterAwareInterface
         }
 
         if ((bool) $this->getSessionSetting('use_cookies') !== true) {
-            throw new \RuntimeException('"session.use_cookies" ini setting must be set to false');
+            throw new \RuntimeException('"session.use_cookies" ini setting must be set to true');
         }
 
         if ((bool) $this->getSessionSetting('use_only_cookies') !== true) {
-            throw new \RuntimeException('"session.use_only_cookies" ini setting must be set to false');
+            throw new \RuntimeException('"session.use_only_cookies" ini setting must be set to true');
         }
 
         if ((bool) $this->getSessionSetting('use_strict_mode') !== false) {
@@ -172,7 +176,7 @@ class SessionWare implements EmitterAwareInterface
         }
 
         if ($this->getSessionSetting('cache_limiter') !== null) {
-            throw new \RuntimeException('"session.cache_limiter" ini setting must be set to false');
+            throw new \RuntimeException('"session.cache_limiter" ini setting must be set to empty string');
         }
     }
 
@@ -188,14 +192,14 @@ class SessionWare implements EmitterAwareInterface
             : min($this->getSessionSetting('cookie_lifetime'), (int) $this->getSessionSetting('gc_maxlifetime'));
 
         return [
-            'name'             => $this->getSessionSetting('name', 'PHPSESSID'),
-            'path'             => $this->getSessionSetting('cookie_path'),
-            'domain'           => $this->getSessionSetting('cookie_domain', '/'),
-            'secure'           => $this->getSessionSetting('cookie_secure'),
-            'httponly'         => $this->getSessionSetting('cookie_httponly'),
-            'savePath'         => $this->getSessionSetting('save_path', sys_get_temp_dir()),
-            'lifetime'         => $lifeTime > 0 ? $lifeTime : static::SESSION_LIFETIME_DEFAULT,
-            'timeoutKey'       => static::SESSION_TIMEOUT_KEY_DEFAULT,
+            'name'       => $this->getSessionSetting('name', 'PHPSESSID'),
+            'path'       => $this->getSessionSetting('cookie_path'),
+            'domain'     => $this->getSessionSetting('cookie_domain', '/'),
+            'secure'     => $this->getSessionSetting('cookie_secure'),
+            'httponly'   => $this->getSessionSetting('cookie_httponly'),
+            'savePath'   => $this->getSessionSetting('save_path', sys_get_temp_dir()),
+            'lifetime'   => $lifeTime > 0 ? $lifeTime : static::SESSION_LIFETIME_DEFAULT,
+            'timeoutKey' => static::SESSION_TIMEOUT_KEY_DEFAULT,
         ];
     }
 
@@ -327,6 +331,8 @@ class SessionWare implements EmitterAwareInterface
      * Manage session timeout.
      *
      * @throws \InvalidArgumentException
+     *
+     * @SuppressWarnings(PHPMD.Superglobals)
      */
     protected function manageSessionTimeout()
     {
@@ -343,6 +349,8 @@ class SessionWare implements EmitterAwareInterface
 
     /**
      * Close previous session and create a new empty one.
+     *
+     * @SuppressWarnings(PHPMD.Superglobals)
      */
     protected function recreateSession()
     {
@@ -350,7 +358,7 @@ class SessionWare implements EmitterAwareInterface
         session_unset();
         session_destroy();
 
-        session_id(SessionWare::generateSessionId());
+        session_id(static::generateSessionId());
 
         session_start();
     }
@@ -359,6 +367,8 @@ class SessionWare implements EmitterAwareInterface
      * Populate session with initial parameters if they don't exist.
      *
      * @param array $initialSessionParams
+     *
+     * @SuppressWarnings(PHPMD.Superglobals)
      */
     protected function populateSession(array $initialSessionParams)
     {
@@ -377,6 +387,8 @@ class SessionWare implements EmitterAwareInterface
      * @throws \InvalidArgumentException
      *
      * @return ResponseInterface
+     *
+     * @SuppressWarnings(PHPMD.Superglobals)
      */
     protected function respondWithSessionCookie(ResponseInterface $response)
     {
