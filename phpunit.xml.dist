@@ -22,7 +22,7 @@
 >
     <testsuites>
         <testsuite name="sessionware test suite">
-            <directory suffix="Test.php">tests/Middleware/</directory>
+            <directory suffix="Test.php">tests/Sessionware/</directory>
         </testsuite>
     </testsuites>
 

@@ -11,7 +11,7 @@
 
 namespace Jgut\Middleware\Sessionware\Tests;
 
-use Jgut\Middleware\SessionWare;
+use Jgut\Middleware\Sessionware\Sessionware;
 use PHPUnit\Framework\TestCase;
 use Zend\Diactoros\Response;
 use Zend\Diactoros\ServerRequestFactory;
@@ -19,7 +19,7 @@ use Zend\Diactoros\ServerRequestFactory;
 /**
  * PHP session handler middleware test class.
  */
-class SessionWareTest extends TestCase
+class SessionwareTest extends TestCase
 {
     /**
      * @var \Psr\Http\Message\ServerRequestInterface
@@ -70,7 +70,7 @@ class SessionWareTest extends TestCase
 
         session_start();
 
-        $middleware = new SessionWare(['name' => 'SessionWareSession']);
+        $middleware = new Sessionware(['name' => 'SessionWareSession']);
 
         $middleware($this->request, $this->response, $this->callback);
     }
@@ -81,11 +81,11 @@ class SessionWareTest extends TestCase
      */
     public function testSessionTimeoutControlKey()
     {
-        $middleware = new SessionWare(['name' => 'SessionWareSession', 'timeoutKey' => '__TIMEOUT__']);
+        $middleware = new Sessionware(['name' => 'SessionWareSession', 'timeoutKey' => '__TIMEOUT__']);
 
         $middleware($this->request, $this->response, $this->callback);
 
-        $limitTimeout = time() - SessionWare::SESSION_LIFETIME_EXTENDED;
+        $limitTimeout = time() - Sessionware::SESSION_LIFETIME_EXTENDED;
         $_SESSION['__TIMEOUT__'] = $limitTimeout;
         session_write_close();
 
@@ -116,7 +116,7 @@ class SessionWareTest extends TestCase
      */
     public function testSessionErrorTimeoutControlKey()
     {
-        $middleware = new SessionWare(['name' => 'SessionWareSession', 'timeoutKey' => '  ']);
+        $middleware = new Sessionware(['name' => 'SessionWareSession', 'timeoutKey' => '  ']);
 
         $middleware($this->request, $this->response, $this->callback);
     }
@@ -130,7 +130,7 @@ class SessionWareTest extends TestCase
      */
     public function testEmptySessionName()
     {
-        $middleware = new SessionWare(['name' => '']);
+        $middleware = new Sessionware(['name' => '']);
 
         $middleware($this->request, $this->response, $this->callback);
     }
@@ -141,7 +141,7 @@ class SessionWareTest extends TestCase
      */
     public function testSessionName()
     {
-        $middleware = new SessionWare(['name' => 'SessionWareSession']);
+        $middleware = new Sessionware(['name' => 'SessionWareSession']);
 
         /** @var Response $response */
         $response = $middleware($this->request, $this->response, $this->callback);
@@ -157,11 +157,11 @@ class SessionWareTest extends TestCase
      */
     public function testSessionIdFromFunction()
     {
-        $sessionId = SessionWare::generateSessionId();
+        $sessionId = Sessionware::generateSessionId();
 
         session_id($sessionId);
 
-        $middleware = new SessionWare(['name' => 'SessionWareSession']);
+        $middleware = new Sessionware(['name' => 'SessionWareSession']);
 
         /** @var Response $response */
         $response = $middleware($this->request, $this->response, $this->callback);
@@ -176,11 +176,11 @@ class SessionWareTest extends TestCase
      */
     public function testSessionIdFromRequest()
     {
-        $sessionId = SessionWare::generateSessionId();
+        $sessionId = Sessionware::generateSessionId();
 
         $request = ServerRequestFactory::fromGlobals(null, null, null, ['SessionWareSession' => $sessionId]);
 
-        $middleware = new SessionWare(['name' => 'SessionWareSession']);
+        $middleware = new Sessionware(['name' => 'SessionWareSession']);
 
         /** @var Response $response */
         $response = $middleware($request, $this->response, $this->callback);
@@ -195,7 +195,7 @@ class SessionWareTest extends TestCase
      */
     public function testGeneratedSessionId()
     {
-        $middleware = new SessionWare(['name' => 'SessionWareSession']);
+        $middleware = new Sessionware(['name' => 'SessionWareSession']);
 
         $middleware($this->request, $this->response, $this->callback);
 
@@ -208,7 +208,7 @@ class SessionWareTest extends TestCase
      */
     public function testSessionEmptySavePath()
     {
-        $middleware = new SessionWare(['name' => 'SessionWareSession', 'savePath' => '']);
+        $middleware = new Sessionware(['name' => 'SessionWareSession', 'savePath' => '']);
 
         $middleware($this->request, $this->response, $this->callback);
 
@@ -226,7 +226,7 @@ class SessionWareTest extends TestCase
 
         session_save_path($tmpPath);
 
-        $middleware = new SessionWare(['name' => 'SessionWareSession']);
+        $middleware = new Sessionware(['name' => 'SessionWareSession']);
 
         $middleware($this->request, $this->response, $this->callback);
 
@@ -242,7 +242,7 @@ class SessionWareTest extends TestCase
     {
         $tmpPath = sys_get_temp_dir() . '/SessionWareSession';
 
-        $middleware = new SessionWare(['name' => 'SessionWareSession', 'savePath' => $tmpPath]);
+        $middleware = new Sessionware(['name' => 'SessionWareSession', 'savePath' => $tmpPath]);
 
         $middleware($this->request, $this->response, $this->callback);
 
@@ -259,7 +259,7 @@ class SessionWareTest extends TestCase
      */
     public function testSessionErrorSavePath()
     {
-        $middleware = new SessionWare(['name' => 'SessionWareSession', 'savePath' => '/my-fake-dir']);
+        $middleware = new Sessionware(['name' => 'SessionWareSession', 'savePath' => '/my-fake-dir']);
 
         $middleware($this->request, $this->response, $this->callback);
     }
@@ -273,12 +273,12 @@ class SessionWareTest extends TestCase
         ini_set('session.cookie_lifetime', 0);
         ini_set('session.gc_maxlifetime', 0);
 
-        $middleware = new SessionWare(['name' => 'SessionWareSession']);
+        $middleware = new Sessionware(['name' => 'SessionWareSession']);
 
         $middleware($this->request, $this->response, $this->callback);
 
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertEquals(SessionWare::SESSION_LIFETIME_DEFAULT, ini_get('session.gc_maxlifetime'));
+        self::assertEquals(Sessionware::SESSION_LIFETIME_DEFAULT, ini_get('session.gc_maxlifetime'));
     }
 
     /**
@@ -288,9 +288,9 @@ class SessionWareTest extends TestCase
     public function testSessionTimeoutByCookieLifetime()
     {
         ini_set('session.cookie_lifetime', 10);
-        ini_set('session.gc_maxlifetime', SessionWare::SESSION_LIFETIME_EXTENDED);
+        ini_set('session.gc_maxlifetime', Sessionware::SESSION_LIFETIME_EXTENDED);
 
-        $middleware = new SessionWare(['name' => 'SessionWareSession']);
+        $middleware = new Sessionware(['name' => 'SessionWareSession']);
 
         $middleware($this->request, $this->response, $this->callback);
 
@@ -305,14 +305,14 @@ class SessionWareTest extends TestCase
     public function testSessionTimeoutByMaxLifetime()
     {
         ini_set('session.cookie_lifetime', 0);
-        ini_set('session.gc_maxlifetime', SessionWare::SESSION_LIFETIME_NORMAL);
+        ini_set('session.gc_maxlifetime', Sessionware::SESSION_LIFETIME_NORMAL);
 
-        $middleware = new SessionWare(['name' => 'SessionWareSession']);
+        $middleware = new Sessionware(['name' => 'SessionWareSession']);
 
         $middleware($this->request, $this->response, $this->callback);
 
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertEquals(SessionWare::SESSION_LIFETIME_NORMAL, ini_get('session.gc_maxlifetime'));
+        self::assertEquals(Sessionware::SESSION_LIFETIME_NORMAL, ini_get('session.gc_maxlifetime'));
     }
 
     /**
@@ -321,15 +321,15 @@ class SessionWareTest extends TestCase
      */
     public function testSessionTimeoutByParameter()
     {
-        $middleware = new SessionWare([
+        $middleware = new Sessionware([
             'name' => 'SessionWareSession',
-            'lifetime' => SessionWare::SESSION_LIFETIME_SHORT,
+            'lifetime' => Sessionware::SESSION_LIFETIME_SHORT,
         ]);
 
         $middleware($this->request, $this->response, $this->callback);
 
         self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertEquals(SessionWare::SESSION_LIFETIME_SHORT, ini_get('session.gc_maxlifetime'));
+        self::assertEquals(Sessionware::SESSION_LIFETIME_SHORT, ini_get('session.gc_maxlifetime'));
     }
 
     /**
@@ -341,7 +341,7 @@ class SessionWareTest extends TestCase
      */
     public function testSessionErrorTimeout()
     {
-        $middleware = new SessionWare(['name' => 'SessionWareSession', 'lifetime' => 0]);
+        $middleware = new Sessionware(['name' => 'SessionWareSession', 'lifetime' => 0]);
 
         $middleware($this->request, $this->response, $this->callback);
     }
@@ -352,7 +352,7 @@ class SessionWareTest extends TestCase
      */
     public function testSessionDefaultParams()
     {
-        $middleware = new SessionWare(['name' => 'SessionWareSession'], ['parameter' => 'value']);
+        $middleware = new Sessionware(['name' => 'SessionWareSession'], ['parameter' => 'value']);
 
         $middleware($this->request, $this->response, $this->callback);
 
@@ -366,7 +366,7 @@ class SessionWareTest extends TestCase
      */
     public function testSessionCookieParams()
     {
-        $middleware = new SessionWare([
+        $middleware = new Sessionware([
             'name' => 'SessionWareSession',
             'lifetime' => 300,
             'domain' => 'http://example.com',
@@ -394,7 +394,7 @@ class SessionWareTest extends TestCase
      */
     public function testSessionEndedCookieParams()
     {
-        $middleware = new SessionWare([
+        $middleware = new Sessionware([
             'name' => 'SessionWareSession',
             'lifetime' => 300,
             'domain' => 'http://example.com',

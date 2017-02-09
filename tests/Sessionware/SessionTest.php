@@ -11,7 +11,7 @@
 
 namespace Jgut\Middleware\Sessionware\Tests;
 
-use Jgut\Middleware\Session;
+use Jgut\Middleware\Sessionware\Session;
 use PHPUnit\Framework\TestCase;
 
 /**

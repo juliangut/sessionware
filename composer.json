@@ -41,12 +41,12 @@
   },
   "autoload": {
     "psr-4": {
-      "Jgut\\Middleware\\": "src/"
+      "Jgut\\Middleware\\Sessionware\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Jgut\\Middleware\\Sessionware\\Tests\\": "tests/Middleware/"
+      "Jgut\\Middleware\\Sessionware\\Tests\\": "tests/Sessionware/"
     }
   },
   "bin": [

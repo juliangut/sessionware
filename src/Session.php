@@ -9,15 +9,36 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
-namespace Jgut\Middleware;
+namespace Jgut\Middleware\Sessionware;
+
+use League\Event\EmitterAwareInterface;
+use League\Event\EmitterTrait;
+use League\Event\Event;
 
 /**
  * Session helper.
  *
  * @SuppressWarnings(PHPMD.Superglobals)
  */
-class Session
+class Session implements EmitterAwareInterface
 {
+    use EmitterTrait;
+
+    /**
+     * @var Configuration
+     */
+    protected $configuration;
+
+    /**
+     * Session constructor.
+     *
+     * @param Configuration $configuration
+     */
+    public function __construct(Configuration $configuration)
+    {
+        $this->configuration = $configuration;
+    }
+
     /**
      * Session parameter existence.
      *
@@ -87,34 +108,81 @@ class Session
     }
 
     /**
-     * Regenerate session.
+     * Manage session timeout.
      *
-     * @return $this
+     * @throws \InvalidArgumentException
+     *
+     * @SuppressWarnings(PHPMD.Superglobals)
      */
-    public function regenerate()
+    public function manageTimeout()
     {
-        static::regenerateSessionId();
+        $timeoutKey = $this->configuration->getTimeoutKey();
 
-        return $this;
+        if (array_key_exists($timeoutKey, $_SESSION) && $_SESSION[$timeoutKey] < time()) {
+            $this->emit(Event::named('pre.session_timeout'), session_id(), $this);
+
+            $this->resetSession();
+
+            $this->emit(Event::named('post.session_timeout'), session_id(), $this);
+        }
+
+        $_SESSION[$timeoutKey] = time() + $this->configuration->getLifetime();
     }
 
     /**
      * Regenerate session identifier keeping session parameters.
+     *
+     * @throws \RuntimeException
      */
-    public static function regenerateSessionId()
+    public function regenerateSessionId()
     {
-        $sessionParams = $_SESSION;
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            throw new \RuntimeException('Cannot regenerate id on a not started session');
+        }
+
+        $paramsBackup = $_SESSION;
+
+        $this->resetSession();
+
+        foreach ($paramsBackup as $param => $value) {
+            $_SESSION[$param] = $value;
+        }
+    }
+
+    /**
+     * Close previous session and create a new empty one.
+     *
+     * @SuppressWarnings(PHPMD.Superglobals)
+     */
+    protected function resetSession()
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_id($this->getNewSessionId());
+            return;
+        }
 
         $_SESSION = [];
         session_unset();
         session_destroy();
 
-        session_id(SessionWare::generateSessionId());
+        session_id($this->getNewSessionId());
 
         session_start();
+    }
 
-        foreach ($sessionParams as $param => $value) {
-            $_SESSION[$param] = $value;
-        }
+    /**
+     * Generates cryptographically secure session identifier.
+     *
+     * @param int $length
+     *
+     * @return string
+     */
+    protected function getNewSessionId($length = Configuration::SESSION_ID_LENGTH)
+    {
+        return substr(
+            preg_replace('/[^a-zA-Z0-9-]+/', '', base64_encode(random_bytes((int) $length))),
+            0,
+            (int) $length
+        );
     }
 }
