@@ -16,7 +16,7 @@ namespace Jgut\Middleware\Sessionware;
  */
 class Configuration
 {
-    use SessionIniSettingTrait;
+    use SessionTrait;
 
     const LIFETIME_FLASH    = 300; // 5 minutes
     const LIFETIME_SHORT    = 600; // 10 minutes
@@ -103,19 +103,19 @@ class Configuration
      */
     protected function getDefaultSessionSettings()
     {
-        $lifeTime = (int) $this->getSessionIniSetting('cookie_lifetime') === 0
-            ? (int) $this->getSessionIniSetting('gc_maxlifetime')
-            : min($this->getSessionIniSetting('cookie_lifetime'), (int) $this->getSessionIniSetting('gc_maxlifetime'));
+        $lifeTime = $this->getIntegerIniSetting('cookie_lifetime') === 0
+            ? $this->getIntegerIniSetting('gc_maxlifetime')
+            : min($this->getIntegerIniSetting('cookie_lifetime'), $this->getIntegerIniSetting('gc_maxlifetime'));
 
         return [
-            'name'           => $this->getSessionIniSetting('name', static::SESSION_NAME_DEFAULT),
-            'savePath'       => $this->getSessionIniSetting('save_path', sys_get_temp_dir()),
+            'name'           => $this->getStringIniSetting('name', static::SESSION_NAME_DEFAULT),
+            'savePath'       => $this->getStringIniSetting('save_path', sys_get_temp_dir()),
             'lifetime'       => $lifeTime > 0 ? $lifeTime : static::LIFETIME_DEFAULT,
             'timeoutKey'     => static::TIMEOUT_KEY_DEFAULT,
-            'cookiePath'     => $this->getSessionIniSetting('cookie_path'),
-            'cookieDomain'   => $this->getSessionIniSetting('cookie_domain', '/'),
-            'cookieSecure'   => $this->getSessionIniSetting('cookie_secure', false),
-            'cookieHttpOnly' => $this->getSessionIniSetting('cookie_httponly', true),
+            'cookiePath'     => $this->getStringIniSetting('cookie_path', '/'),
+            'cookieDomain'   => $this->getStringIniSetting('cookie_domain'),
+            'cookieSecure'   => $this->hasBoolIniSetting('cookie_secure'),
+            'cookieHttpOnly' => $this->hasBoolIniSetting('cookie_httponly'),
         ];
     }
 
@@ -297,7 +297,7 @@ class Configuration
             throw new \InvalidArgumentException('Session save path must be a non empty string');
         }
 
-        $this->savePath = $savePath;
+        $this->savePath = trim($savePath);
 
         return $this;
     }

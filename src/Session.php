@@ -22,6 +22,7 @@ use League\Event\Event;
  */
 class Session implements EmitterAwareInterface
 {
+    use SessionTrait;
     use EmitterTrait;
 
     /**
@@ -70,7 +71,7 @@ class Session implements EmitterAwareInterface
      * @param string $key
      * @param mixed  $value
      *
-     * @return $this
+     * @return static
      */
     public function set($key, $value)
     {
@@ -84,7 +85,7 @@ class Session implements EmitterAwareInterface
      *
      * @param string $key
      *
-     * @return $this
+     * @return static
      */
     public function remove($key)
     {
@@ -98,7 +99,7 @@ class Session implements EmitterAwareInterface
     /**
      * Remove all session parameters.
      *
-     * @return $this
+     * @return static
      */
     public function clear()
     {
@@ -109,10 +110,6 @@ class Session implements EmitterAwareInterface
 
     /**
      * Manage session timeout.
-     *
-     * @throws \InvalidArgumentException
-     *
-     * @SuppressWarnings(PHPMD.Superglobals)
      */
     public function manageTimeout()
     {
@@ -140,49 +137,12 @@ class Session implements EmitterAwareInterface
             throw new \RuntimeException('Cannot regenerate id on a not started session');
         }
 
-        $paramsBackup = $_SESSION;
+        $sessionBackup = is_array($_SESSION) ? $_SESSION : [];
 
         $this->resetSession();
 
-        foreach ($paramsBackup as $param => $value) {
+        foreach ($sessionBackup as $param => $value) {
             $_SESSION[$param] = $value;
         }
-    }
-
-    /**
-     * Close previous session and create a new empty one.
-     *
-     * @SuppressWarnings(PHPMD.Superglobals)
-     */
-    protected function resetSession()
-    {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_id($this->getNewSessionId());
-            return;
-        }
-
-        $_SESSION = [];
-        session_unset();
-        session_destroy();
-
-        session_id($this->getNewSessionId());
-
-        session_start();
-    }
-
-    /**
-     * Generates cryptographically secure session identifier.
-     *
-     * @param int $length
-     *
-     * @return string
-     */
-    protected function getNewSessionId($length = Configuration::SESSION_ID_LENGTH)
-    {
-        return substr(
-            preg_replace('/[^a-zA-Z0-9-]+/', '', base64_encode(random_bytes((int) $length))),
-            0,
-            (int) $length
-        );
     }
 }

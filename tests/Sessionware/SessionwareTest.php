@@ -11,16 +11,29 @@
 
 namespace Jgut\Middleware\Sessionware\Tests;
 
+use Jgut\Middleware\Sessionware\Configuration;
 use Jgut\Middleware\Sessionware\Sessionware;
+use org\bovigo\vfs\vfsStream;
+use org\bovigo\vfs\vfsStreamDirectory;
 use PHPUnit\Framework\TestCase;
 use Zend\Diactoros\Response;
 use Zend\Diactoros\ServerRequestFactory;
 
 /**
- * PHP session handler middleware test class.
+ * PHP session handler middleware t_est class.
  */
 class SessionwareTest extends TestCase
 {
+    /**
+     * @var Configuration
+     */
+    protected $configuration;
+
+    /**
+     * @var vfsStreamDirectory
+     */
+    protected $basePath;
+
     /**
      * @var \Psr\Http\Message\ServerRequestInterface
      */
@@ -41,18 +54,34 @@ class SessionwareTest extends TestCase
      */
     public function setUp()
     {
-        // Set a high probability to launch garbage collector
-        ini_set('session.gc_probability', 1);
-        ini_set('session.gc_divisor', 4);
-
         if (session_status() === PHP_SESSION_ACTIVE) {
+            $_SESSION = [];
             session_unset();
             session_destroy();
         }
 
+        // Set a high probability to launch garbage collector
+        ini_set('session.gc_probability', 1);
+        ini_set('session.gc_divisor', 4);
+
+        session_id('00000000000000000000000000000000');
+
+        $this->basePath = vfsStream::setup('vfsRoot');
+        mkdir($this->basePath->url() . '/Sessionware', 0775);
+
+        $this->configuration = new Configuration([
+            'name' => 'Sessionware',
+            'savePath' => sys_get_temp_dir(), // $this->basePath->url(),
+            'getTimeoutKey' => '__timeout__',
+        ]);
+
         $this->request = ServerRequestFactory::fromGlobals();
         $this->response = new Response;
         $this->callback = function ($request, $response) {
+            session_start();
+
+            $_SESSION['test'] = 'value';
+
             return $response;
         };
     }
@@ -62,16 +91,16 @@ class SessionwareTest extends TestCase
      * @preserveGlobalState disabled
      *
      * @expectedException \RuntimeException
-     * @expectedExceptionMessageRegExp /^Session has already been started/
+     * @expectedExceptionMessage Session has already been started. Check "session.auto_start" ini setting
      */
     public function testSessionAlreadyStarted()
     {
-        session_id('SessionWareSession');
+        $middleware = new Sessionware();
+
+        ini_set('session.save_path', $this->configuration->getSavePath() . '/' . $this->configuration->getName());
 
         session_start();
 
-        $middleware = new Sessionware(['name' => 'SessionWareSession']);
-
         $middleware($this->request, $this->response, $this->callback);
     }
 
@@ -79,60 +108,18 @@ class SessionwareTest extends TestCase
      * @runInSeparateProcess
      * @preserveGlobalState disabled
      */
-    public function testSessionTimeoutControlKey()
+    public function testSessionNotStarted()
     {
-        $middleware = new Sessionware(['name' => 'SessionWareSession', 'timeoutKey' => '__TIMEOUT__']);
+        $middleware = new Sessionware($this->configuration);
 
-        $middleware($this->request, $this->response, $this->callback);
+        $callback = function ($request, $response) {
+            return $response;
+        };
+        /* @var Response $response */
+        $response = $middleware($this->request, $this->response, $callback);
 
-        $limitTimeout = time() - Sessionware::SESSION_LIFETIME_EXTENDED;
-        $_SESSION['__TIMEOUT__'] = $limitTimeout;
-        session_write_close();
-
-        $sessionHolder = new \stdClass();
-        $middleware->addListener('pre.session_timeout', function ($sessionId) use ($sessionHolder) {
-            $sessionHolder->id = $sessionId;
-        });
-
-        $assert = $this;
-        $middleware->addListener('post.session_timeout', function ($sessionId) use ($assert, $sessionHolder) {
-            $assert::assertNotNull($sessionHolder->id);
-            $assert::assertNotEquals($sessionHolder->id, $sessionId);
-        });
-
-        $middleware($this->request, $this->response, $this->callback);
-
-        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertTrue(array_key_exists('__TIMEOUT__', $_SESSION));
-        self::assertNotEquals($_SESSION['__TIMEOUT__'], $limitTimeout);
-    }
-
-    /**
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     *
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage "  " is not a valid session timeout
-     */
-    public function testSessionErrorTimeoutControlKey()
-    {
-        $middleware = new Sessionware(['name' => 'SessionWareSession', 'timeoutKey' => '  ']);
-
-        $middleware($this->request, $this->response, $this->callback);
-    }
-
-    /**
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     *
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage Session name must be a non empty string
-     */
-    public function testEmptySessionName()
-    {
-        $middleware = new Sessionware(['name' => '']);
-
-        $middleware($this->request, $this->response, $this->callback);
+        self::assertEquals(PHP_SESSION_NONE, session_status());
+        self::assertEmpty($response->getHeaderLine('Set-Cookie'));
     }
 
     /**
@@ -141,32 +128,81 @@ class SessionwareTest extends TestCase
      */
     public function testSessionName()
     {
-        $middleware = new Sessionware(['name' => 'SessionWareSession']);
+        $middleware = new Sessionware($this->configuration);
 
-        /** @var Response $response */
+        /* @var Response $response */
         $response = $middleware($this->request, $this->response, $this->callback);
 
-        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertEquals('SessionWareSession', session_name());
-        self::assertSame(strpos($response->getHeaderLine('Set-Cookie'), 'SessionWareSession'), 0);
+        self::assertEquals($this->configuration->getName(), session_name());
+        self::assertSame(strpos($response->getHeaderLine('Set-Cookie'), $this->configuration->getName()), 0);
     }
 
     /**
      * @runInSeparateProcess
      * @preserveGlobalState disabled
      */
-    public function testSessionIdFromFunction()
+    public function testSessionSavePathDefault()
     {
-        $sessionId = Sessionware::generateSessionId();
+        $tmpPath = sys_get_temp_dir() . '/' . $this->configuration->getName();
+        ini_set('session.save_path', $tmpPath);
 
+        $middleware = new Sessionware($this->configuration);
+
+        $middleware($this->request, $this->response, $this->callback);
+
+        self::assertTrue(is_dir($tmpPath));
+    }
+
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    public function testSessionSavePathCreation()
+    {
+        $tmpPath = sys_get_temp_dir() . '/' . $this->configuration->getName();
+        $middleware = new Sessionware($this->configuration);
+
+        $middleware($this->request, $this->response, $this->callback);
+
+        self::assertTrue(is_dir($tmpPath));
+    }
+
+    /**
+     * @runInSeparateProcess
+     *
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessageRegExp /^Failed to create session save path ".+", directory might be write protected$/
+     */
+    public function testInvalidSessionSavePath()
+    {
+        mkdir($this->basePath->url() . '/writeProtected');
+        chmod($this->basePath->url() . '/writeProtected', 0444);
+
+        $this->configuration->setSavePath($this->basePath->url() . '/writeProtected');
+        $middleware = new Sessionware($this->configuration);
+
+        $middleware($this->request, $this->response, $this->callback);
+    }
+
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    public function testSessionIdFromEnvironment()
+    {
+        $middleware = new Sessionware($this->configuration);
+
+        $sessionId = substr(
+            preg_replace('/[^a-zA-Z0-9-]+/', '', base64_encode(random_bytes(Configuration::SESSION_ID_LENGTH))),
+            0,
+            Configuration::SESSION_ID_LENGTH
+        );
         session_id($sessionId);
 
-        $middleware = new Sessionware(['name' => 'SessionWareSession']);
-
-        /** @var Response $response */
+        /* @var Response $response */
         $response = $middleware($this->request, $this->response, $this->callback);
 
-        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
+        self::assertEquals($this->configuration->getName(), session_name());
         self::assertNotSame(strpos($response->getHeaderLine('Set-Cookie'), $sessionId), false);
     }
 
@@ -176,188 +212,25 @@ class SessionwareTest extends TestCase
      */
     public function testSessionIdFromRequest()
     {
-        $sessionId = Sessionware::generateSessionId();
+        $middleware = new Sessionware($this->configuration);
 
-        $request = ServerRequestFactory::fromGlobals(null, null, null, ['SessionWareSession' => $sessionId]);
+        $sessionId = substr(
+            preg_replace('/[^a-zA-Z0-9-]+/', '', base64_encode(random_bytes(Configuration::SESSION_ID_LENGTH))),
+            0,
+            Configuration::SESSION_ID_LENGTH
+        );
+        $request = ServerRequestFactory::fromGlobals(
+            null,
+            null,
+            null,
+            [$this->configuration->getName() => $sessionId]
+        );
 
-        $middleware = new Sessionware(['name' => 'SessionWareSession']);
-
-        /** @var Response $response */
+        /* @var Response $response */
         $response = $middleware($request, $this->response, $this->callback);
 
-        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
+        self::assertEquals($this->configuration->getName(), session_name());
         self::assertNotSame(strpos($response->getHeaderLine('Set-Cookie'), $sessionId), false);
-    }
-
-    /**
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     */
-    public function testGeneratedSessionId()
-    {
-        $middleware = new Sessionware(['name' => 'SessionWareSession']);
-
-        $middleware($this->request, $this->response, $this->callback);
-
-        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-    }
-
-    /**
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     */
-    public function testSessionEmptySavePath()
-    {
-        $middleware = new Sessionware(['name' => 'SessionWareSession', 'savePath' => '']);
-
-        $middleware($this->request, $this->response, $this->callback);
-
-        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertTrue(is_dir(sys_get_temp_dir() . '/SessionWareSession'));
-    }
-
-    /**
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     */
-    public function testSessionSavePathFromFunction()
-    {
-        $tmpPath = sys_get_temp_dir() . '/SessionWareSession';
-
-        session_save_path($tmpPath);
-
-        $middleware = new Sessionware(['name' => 'SessionWareSession']);
-
-        $middleware($this->request, $this->response, $this->callback);
-
-        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertTrue(is_dir($tmpPath));
-    }
-
-    /**
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     */
-    public function testSessionSavePathFromParameter()
-    {
-        $tmpPath = sys_get_temp_dir() . '/SessionWareSession';
-
-        $middleware = new Sessionware(['name' => 'SessionWareSession', 'savePath' => $tmpPath]);
-
-        $middleware($this->request, $this->response, $this->callback);
-
-        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertTrue(is_dir($tmpPath));
-    }
-
-    /**
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     *
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessageRegExp /^Failed to create session save path/
-     */
-    public function testSessionErrorSavePath()
-    {
-        $middleware = new Sessionware(['name' => 'SessionWareSession', 'savePath' => '/my-fake-dir']);
-
-        $middleware($this->request, $this->response, $this->callback);
-    }
-
-    /**
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     */
-    public function testSessionTimeoutDefault()
-    {
-        ini_set('session.cookie_lifetime', 0);
-        ini_set('session.gc_maxlifetime', 0);
-
-        $middleware = new Sessionware(['name' => 'SessionWareSession']);
-
-        $middleware($this->request, $this->response, $this->callback);
-
-        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertEquals(Sessionware::SESSION_LIFETIME_DEFAULT, ini_get('session.gc_maxlifetime'));
-    }
-
-    /**
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     */
-    public function testSessionTimeoutByCookieLifetime()
-    {
-        ini_set('session.cookie_lifetime', 10);
-        ini_set('session.gc_maxlifetime', Sessionware::SESSION_LIFETIME_EXTENDED);
-
-        $middleware = new Sessionware(['name' => 'SessionWareSession']);
-
-        $middleware($this->request, $this->response, $this->callback);
-
-        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertEquals(10, ini_get('session.gc_maxlifetime'));
-    }
-
-    /**
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     */
-    public function testSessionTimeoutByMaxLifetime()
-    {
-        ini_set('session.cookie_lifetime', 0);
-        ini_set('session.gc_maxlifetime', Sessionware::SESSION_LIFETIME_NORMAL);
-
-        $middleware = new Sessionware(['name' => 'SessionWareSession']);
-
-        $middleware($this->request, $this->response, $this->callback);
-
-        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertEquals(Sessionware::SESSION_LIFETIME_NORMAL, ini_get('session.gc_maxlifetime'));
-    }
-
-    /**
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     */
-    public function testSessionTimeoutByParameter()
-    {
-        $middleware = new Sessionware([
-            'name' => 'SessionWareSession',
-            'lifetime' => Sessionware::SESSION_LIFETIME_SHORT,
-        ]);
-
-        $middleware($this->request, $this->response, $this->callback);
-
-        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertEquals(Sessionware::SESSION_LIFETIME_SHORT, ini_get('session.gc_maxlifetime'));
-    }
-
-    /**
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     *
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage Session lifetime must be at least 1
-     */
-    public function testSessionErrorTimeout()
-    {
-        $middleware = new Sessionware(['name' => 'SessionWareSession', 'lifetime' => 0]);
-
-        $middleware($this->request, $this->response, $this->callback);
-    }
-
-    /**
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     */
-    public function testSessionDefaultParams()
-    {
-        $middleware = new Sessionware(['name' => 'SessionWareSession'], ['parameter' => 'value']);
-
-        $middleware($this->request, $this->response, $this->callback);
-
-        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
-        self::assertEquals('value', $_SESSION['parameter']);
     }
 
     /**
@@ -366,61 +239,59 @@ class SessionwareTest extends TestCase
      */
     public function testSessionCookieParams()
     {
-        $middleware = new Sessionware([
-            'name' => 'SessionWareSession',
-            'lifetime' => 300,
-            'domain' => 'http://example.com',
-            'path' => 'path',
-            'secure' => true,
-            'httponly' => true,
-        ]);
+        $this->configuration->setLifetime(Configuration::LIFETIME_FLASH);
+        $this->configuration->setCookiePath('/path');
+        $this->configuration->setCookieDomain('example.com');
+        $this->configuration->setCookieSecure(true);
+        $this->configuration->setCookieHttpOnly(true);
 
-        /** @var Response $response */
-        $response = $middleware($this->request, $this->response, $this->callback);
+        $middleware = new Sessionware($this->configuration);
 
-        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
+        $timeoutKey = $this->configuration->getTimeoutKey();
+        $callback = function ($request, $response) use ($timeoutKey) {
+            session_start();
+
+            $_SESSION[$timeoutKey] = time() + 1000;
+
+            return $response;
+        };
+
+        /* @var Response $response */
+        $response = $middleware($this->request, $this->response, $callback);
 
         $cookieHeader = $response->getHeaderLine('Set-Cookie');
-        self::assertTrue(strpos($cookieHeader, 'SessionWareSession') !== false);
-        self::assertTrue(strpos($cookieHeader, 'http://example.com') !== false);
-        self::assertTrue(strpos($cookieHeader, 'path') !== false);
-        self::assertTrue(strpos($cookieHeader, 'secure') !== false);
-        self::assertTrue(strpos($cookieHeader, 'httponly') !== false);
+
+        self::assertNotSame(strpos($cookieHeader, $this->configuration->getName()), false);
+        self::assertNotSame(strpos($cookieHeader, 'max-age=' . $this->configuration->getLifetime()), false);
+        self::assertNotSame(strpos($cookieHeader, 'path=' . $this->configuration->getCookiePath()), false);
+        self::assertNotSame(strpos($cookieHeader, 'domain=' . $this->configuration->getCookieDomain()), false);
+        self::assertNotSame(strpos($cookieHeader, 'secure'), false);
+        self::assertNotSame(strpos($cookieHeader, 'httponly'), false);
     }
 
     /**
      * @runInSeparateProcess
      * @preserveGlobalState disabled
      */
-    public function testSessionEndedCookieParams()
+    public function doTestSessionEndedCookieParams()
     {
-        $middleware = new Sessionware([
-            'name' => 'SessionWareSession',
-            'lifetime' => 300,
-            'domain' => 'http://example.com',
-        ]);
+        $this->configuration->setLifetime(Configuration::LIFETIME_FLASH);
+        $this->configuration->setCookieDomain('example.com');
+
+        $middleware = new Sessionware($this->configuration);
         $expiration = gmdate('D, d M Y H:i:s T', time() - 300);
 
-        /** @var Response $response */
-        $response = $middleware(
-            $this->request,
-            $this->response,
-            function ($request, $response) {
-                $_SESSION = [];
+        $callback = function ($request, $response) {
+            return $response;
+        };
 
-                // Serialization is not allowed in PHPUnit running on a separate process
-                //session_unset();
-                //session_destroy();
-
-                return $response;
-            }
-        );
-
-        self::assertEquals(PHP_SESSION_ACTIVE, session_status());
+        /* @var Response $response */
+        $response = $middleware($this->request, $this->response, $callback);
 
         $cookieHeader = $response->getHeaderLine('Set-Cookie');
-        self::assertTrue(strpos($cookieHeader, 'SessionWareSession') !== false);
-        self::assertTrue(strpos($cookieHeader, 'http://example.com') !== false);
-        self::assertTrue(strpos($cookieHeader, $expiration) !== false);
+        self::assertNotSame(strpos($cookieHeader, $this->configuration->getName()), false);
+        self::assertNotSame(strpos($cookieHeader, 'max-age=' . $this->configuration->getLifetime()), false);
+        self::assertNotSame(strpos($cookieHeader, 'domain=' . $this->configuration->getCookieDomain()), false);
+        self::assertNotSame(strpos($cookieHeader, $expiration), false);
     }
 }

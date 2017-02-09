@@ -16,12 +16,10 @@ use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * PHP session handler middleware.
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class Sessionware
 {
-    use SessionIniSettingTrait;
+    use SessionTrait;
 
     /**
      * @var Configuration
@@ -44,7 +42,9 @@ class Sessionware
         }
 
         if (!$this->isCli()) {
+            // @codeCoverageIgnoreStart
             $this->verifyIniSettings();
+            // @codeCoverageIgnoreEnd
         }
 
         if ($configuration === null) {
@@ -73,27 +73,23 @@ class Sessionware
      */
     final protected function verifyIniSettings()
     {
-        if ((bool) $this->getSessionIniSetting('auto_start') !== false) {
-            throw new \RuntimeException('"session.auto_start" ini setting must be set to false');
-        }
-
-        if ((bool) $this->getSessionIniSetting('use_trans_sid') !== false) {
+        if ($this->hasBoolIniSetting('use_trans_sid') !== false) {
             throw new \RuntimeException('"session.use_trans_sid" ini setting must be set to false');
         }
 
-        if ((bool) $this->getSessionIniSetting('use_cookies') !== true) {
+        if ($this->hasBoolIniSetting('use_cookies') !== true) {
             throw new \RuntimeException('"session.use_cookies" ini setting must be set to true');
         }
 
-        if ((bool) $this->getSessionIniSetting('use_only_cookies') !== true) {
+        if ($this->hasBoolIniSetting('use_only_cookies') !== true) {
             throw new \RuntimeException('"session.use_only_cookies" ini setting must be set to true');
         }
 
-        if ((bool) $this->getSessionIniSetting('use_strict_mode') !== false) {
+        if ($this->hasBoolIniSetting('use_strict_mode') !== false) {
             throw new \RuntimeException('"session.use_strict_mode" ini setting must be set to false');
         }
 
-        if ($this->getSessionIniSetting('cache_limiter') !== null) {
+        if ($this->hasBoolIniSetting('cache_limiter') !== null) {
             throw new \RuntimeException('"session.cache_limiter" ini setting must be set to empty string');
         }
     }
@@ -112,7 +108,7 @@ class Sessionware
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response, callable $next)
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
-            throw new \RuntimeException('Session has already been started');
+            throw new \RuntimeException('Session has already been started. Check "session.auto_start" ini setting');
         }
 
         $this->configureSession($request);
@@ -134,6 +130,7 @@ class Sessionware
         $this->configureSessionSerializer();
         $this->configureSessionSavePath();
         $this->configureSessionTimeout();
+        $this->configureSessionName();
         $this->configureSessionId($request);
     }
 
@@ -143,11 +140,11 @@ class Sessionware
     protected function configureSessionSerializer()
     {
         // Use better session serializer when available
-        if ($this->getSessionIniSetting('serialize_handler') !== 'php_serialize'
+        if ($this->getStringIniSetting('serialize_handler') !== 'php_serialize'
             && version_compare(PHP_VERSION, '5.5.4', '>=')
         ) {
             // @codeCoverageIgnoreStart
-            $this->setSessionIniSetting('serialize_handler', 'php_serialize');
+            $this->setIniSetting('serialize_handler', 'php_serialize');
             // @codeCoverageIgnoreEnd
         }
     }
@@ -159,7 +156,7 @@ class Sessionware
      */
     protected function configureSessionSavePath()
     {
-        if ($this->getSessionIniSetting('save_handler') !== 'files') {
+        if ($this->getStringIniSetting('save_handler') !== 'files') {
             // @codeCoverageIgnoreStart
             return;
             // @codeCoverageIgnoreEnd
@@ -173,18 +170,17 @@ class Sessionware
             $savePath .= DIRECTORY_SEPARATOR . $sessionName;
         }
 
-        if ($savePath === sys_get_temp_dir() || $this->getSessionIniSetting('save_path') === $savePath) {
+        if ($this->getStringIniSetting('save_path') === $savePath) {
             return;
         }
 
-        if (!@mkdir($savePath, 0775, true) && (!is_dir($savePath) || !is_writable($savePath)))
-        {
+        if (!@mkdir($savePath, 0775, true) && (!is_dir($savePath) || !is_writable($savePath))) {
             throw new \RuntimeException(
-                sprintf('Failed to create session save path at "%s", directory might not be write enabled', $savePath)
+                sprintf('Failed to create session save path "%s", directory might be write protected', $savePath)
             );
         }
 
-        $this->setSessionIniSetting('save_path', $savePath);
+        $this->setIniSetting('save_path', $savePath);
     }
 
     /**
@@ -193,7 +189,15 @@ class Sessionware
     protected function configureSessionTimeout()
     {
         // Signal garbage collector with defined timeout
-        $this->setSessionIniSetting('gc_maxlifetime', $this->configuration->getLifetime());
+        $this->setIniSetting('gc_maxlifetime', $this->configuration->getLifetime());
+    }
+
+    /**
+     * Configure session name.
+     */
+    protected function configureSessionName()
+    {
+        session_name($this->configuration->getName());
     }
 
     /**
@@ -231,7 +235,13 @@ class Sessionware
         }
 
         if (strlen(session_id()) !== Configuration::SESSION_ID_LENGTH) {
-            // $this->recreateSession();
+            $sessionBackup = is_array($_SESSION) ? $_SESSION : [];
+
+            $this->resetSession();
+
+            foreach ($sessionBackup as $param => $value) {
+                $_SESSION[$param] = $value;
+            }
         }
 
         $timeoutKey = $this->configuration->getTimeoutKey();
@@ -239,6 +249,26 @@ class Sessionware
             ? $_SESSION[$timeoutKey]
             : time() - $this->configuration->getLifetime();
 
+        return $response->withAddedHeader(
+            'Set-Cookie',
+            sprintf(
+                '%s=%s; %s',
+                urlencode($this->configuration->getName()),
+                urlencode(session_id()),
+                $this->getSessionCookieParameters($expireTime)
+            )
+        );
+    }
+
+    /**
+     * Get session cookie parameters.
+     *
+     * @param int $expireTime
+     *
+     * @return string
+     */
+    protected function getSessionCookieParameters($expireTime)
+    {
         $cookieParams = [
             sprintf(
                 'expires=%s; max-age=%s',
@@ -255,22 +285,14 @@ class Sessionware
             $cookieParams[] = 'domain=' . $this->configuration->getCookieDomain();
         }
 
-        if ((bool) $this->configuration->isCookieSecure()) {
+        if ($this->configuration->isCookieSecure()) {
             $cookieParams[] = 'secure';
         }
 
-        if ((bool) $this->configuration->isCookieHttpOnly()) {
+        if ($this->configuration->isCookieHttpOnly()) {
             $cookieParams[] = 'httponly';
         }
 
-        return $response->withAddedHeader(
-            'Set-Cookie',
-            sprintf(
-                '%s=%s; %s',
-                urlencode($this->configuration->getName()),
-                urlencode(session_id()),
-                implode('; ', $cookieParams)
-            )
-        );
+        return implode('; ', $cookieParams);
     }
 }
