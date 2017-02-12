@@ -31,8 +31,6 @@
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^1.12",
     "humbug/humbug": "~1.0@dev",
-    "mikey179/vfsStream": "^1.6",
-    "mongodb/mongodb": "^1.0",
     "phpmd/phpmd": "^2.0",
     "phpunit/phpunit": "^5.7|6.0",
     "sebastian/phpcpd": "^2.0",
