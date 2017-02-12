@@ -42,7 +42,7 @@ class Native implements Manager
      * Session manager constructor.
      *
      * @param Configuration $configuration
-     * @param Handler       $sessionHandler
+     * @param Handler|null  $sessionHandler
      *
      * @throws \RuntimeException
      */
@@ -333,7 +333,7 @@ class Native implements Manager
     /**
      * Configure session save handler.
      *
-     * @param Handler $sessionHandler
+     * @param Handler|null $sessionHandler
      */
     protected function configureSessionSaveHandler(Handler $sessionHandler = null)
     {

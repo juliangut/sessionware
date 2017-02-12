@@ -60,7 +60,7 @@ trait SessionIniSettingsTrait
      *
      * @param string $setting
      *
-     * @return mixed
+     * @return string
      */
     protected function getIniSetting($setting)
     {

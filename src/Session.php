@@ -12,7 +12,6 @@
 namespace Jgut\Middleware\Sessionware;
 
 use Jgut\Middleware\Sessionware\Manager\Manager;
-use Jgut\Middleware\Sessionware\Manager\Native;
 use League\Event\EmitterAwareInterface;
 use League\Event\EmitterTrait;
 use League\Event\Event;
@@ -25,7 +24,7 @@ class Session implements EmitterAwareInterface
     use EmitterTrait;
 
     /**
-     * @var Native
+     * @var Manager
      */
     protected $sessionManager;
 
