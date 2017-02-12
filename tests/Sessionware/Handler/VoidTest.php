@@ -12,7 +12,7 @@
 namespace Jgut\Middleware\Sessionware\Tests\Handler;
 
 use Jgut\Middleware\Sessionware\Configuration;
-use Jgut\Middleware\Sessionware\Handler\Void;
+use Jgut\Middleware\Sessionware\Handler\Dummy;
 use Jgut\Middleware\Sessionware\Tests\SessionTestCase;
 
 /**
@@ -25,7 +25,7 @@ class VoidTest extends SessionTestCase
      */
     public function testUse()
     {
-        $handler = new Void();
+        $handler = new Dummy();
 
         self::assertTrue($handler->open(sys_get_temp_dir(), Configuration::SESSION_NAME_DEFAULT));
         self::assertTrue($handler->close());

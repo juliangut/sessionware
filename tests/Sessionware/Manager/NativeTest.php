@@ -12,7 +12,7 @@
 namespace Jgut\Middleware\Sessionware\Tests\Manager;
 
 use Jgut\Middleware\Sessionware\Configuration;
-use Jgut\Middleware\Sessionware\Handler\Void;
+use Jgut\Middleware\Sessionware\Handler\Dummy;
 use Jgut\Middleware\Sessionware\Manager\Native;
 use Jgut\Middleware\Sessionware\Tests\SessionTestCase;
 
@@ -56,7 +56,7 @@ class NativeTest extends SessionTestCase
         /* @var Configuration $configuration */
 
         $this->configuration = $configuration;
-        $this->handler = new Void();
+        $this->handler = new Dummy();
     }
 
     /**

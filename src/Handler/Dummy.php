@@ -12,9 +12,9 @@
 namespace Jgut\Middleware\Sessionware\Handler;
 
 /**
- * Void session handler.
+ * Dummy session handler.
  */
-class Void implements Handler
+class Dummy implements Handler
 {
     use HandlerTrait;
 
