@@ -30,6 +30,8 @@ matrix:
 
 before_install:
   - if [[ $TEST_VERSION != true && -f "/home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini" ]]; then phpenv config-rm xdebug.ini; fi
+  - echo "extension = memcached.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - composer global require hirak/prestissimo
   - composer self-update --stable --no-progress
 

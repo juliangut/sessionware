@@ -12,14 +12,19 @@
 namespace Jgut\Middleware\Sessionware\Tests;
 
 use Jgut\Middleware\Sessionware\Configuration;
+use Jgut\Middleware\Sessionware\Manager\Native;
 use Jgut\Middleware\Sessionware\Session;
-use PHPUnit\Framework\TestCase;
 
 /**
  * PHP session helper test class.
  */
-class SessionTest extends TestCase
+class SessionTest extends SessionTestCase
 {
+    /**
+     * @var Configuration
+     */
+    protected $configuration;
+
     /**
      * @var Session
      */
@@ -30,75 +35,162 @@ class SessionTest extends TestCase
      */
     public function setUp()
     {
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            $_SESSION = [];
-            session_unset();
-            session_destroy();
-        }
-
-        // Set a high probability to launch garbage collector
-        ini_set('session.gc_probability', 1);
-        ini_set('session.gc_divisor', 2);
-
-        $savePath = sys_get_temp_dir() . '/Sessionware';
-        if (!file_exists($savePath) || !is_dir($savePath)) {
-            mkdir($savePath, 0775);
-        }
-        ini_set('session.save_path', $savePath);
-        session_id('00000000000000000000000000000000');
-
-        session_start();
+        parent::setUp();
 
         $configuration = $this->getMockBuilder(Configuration::class)
             ->disableOriginalConstructor()
-            ->setMethods(['getLifetime', 'getTimeoutKey'])
+            ->setMethods(['getName', 'getLifetime', 'getTimeoutKey'])
             ->getMock();
         $configuration
             ->expects(self::any())
+            ->method('getName')
+            ->will(self::returnValue('Sessionware'));
+        $configuration
+            ->expects(self::any())
             ->method('getLifetime')
-            ->will(self::returnValue(Configuration::LIFETIME_SHORT));
+            ->will(self::returnValue(Configuration::LIFETIME_DEFAULT));
         $configuration
             ->expects(self::any())
             ->method('getTimeoutKey')
-            ->will(self::returnValue('__timeout__'));
+            ->will(self::returnValue(Configuration::TIMEOUT_KEY_DEFAULT));
         /* @var Configuration $configuration */
 
-        $this->session = new Session($configuration);
+        $this->configuration = $configuration;
     }
 
     /**
      * @runInSeparateProcess
      */
-    public function testSessionAccessorMutator()
+    public function testSessionSettersGetters()
     {
-        self::assertFalse($this->session->has('sessionKey'));
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('getConfiguration')
+            ->will(self::returnValue($this->configuration));
+        /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
 
-        $this->session->set('sessionKeyOne', 'sessionValueOne');
-        $this->session->set('sessionKeyTwo', 'sessionValueTwo');
-        self::assertTrue($this->session->has('sessionKeyOne'));
-        self::assertEquals('sessionValueOne', $this->session->get('sessionKeyOne'));
+        $session = new Session($manager);
 
-        $this->session->remove('sessionKeyOne');
-        self::assertFalse($this->session->has('sessionKeyOne'));
-        self::assertEquals('noValue', $this->session->get('sessionKeyOne', 'noValue'));
+        self::assertFalse($session->has('sessionKey'));
 
-        $this->session->clear();
-        self::assertFalse($this->session->has('sessionKeyTwo'));
+        $session->set('sessionKeyOne', 'sessionValueOne');
+        $session->set('sessionKeyTwo', 'sessionValueTwo');
+        self::assertTrue($session->has('sessionKeyOne'));
+        self::assertEquals('sessionValueOne', $session->get('sessionKeyOne'));
+
+        $session->remove('sessionKeyOne');
+        self::assertFalse($session->has('sessionKeyOne'));
+        self::assertEquals('noValue', $session->get('sessionKeyOne', 'noValue'));
+
+        $session->clear();
+        self::assertFalse($session->has('sessionKeyTwo'));
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testSessionStart()
+    {
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('isSessionStarted')
+            ->will(self::onConsecutiveCalls(false, false, true, true));
+        $manager
+            ->expects(self::once())
+            ->method('sessionStart');
+        $manager
+            ->expects(self::any())
+            ->method('loadSessionData')
+            ->will(self::returnValue([]));
+        $manager
+            ->expects(self::any())
+            ->method('shouldRegenerate')
+            ->will(self::returnValue(true));
+        $manager
+            ->expects(self::once())
+            ->method('sessionReset');
+        $manager
+            ->expects(self::any())
+            ->method('getConfiguration')
+            ->will(self::returnValue($this->configuration));
+        /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
+
+        $session = new Session($manager);
+
+        self::assertFalse($session->isActive());
+
+        $session->start();
+        $session->start();
+
+        self::assertTrue($session->has(Configuration::TIMEOUT_KEY_DEFAULT));
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testSessionClose()
+    {
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('isSessionStarted')
+            ->will(self::onConsecutiveCalls(false, true, false));
+        $manager
+            ->expects(self::once())
+            ->method('sessionStart');
+        $manager
+            ->expects(self::any())
+            ->method('loadSessionData')
+            ->will(self::returnValue([]));
+        $manager
+            ->expects(self::any())
+            ->method('shouldRegenerate')
+            ->will(self::returnValue(false));
+        $manager
+            ->expects(self::once())
+            ->method('sessionEnd');
+        $manager
+            ->expects(self::any())
+            ->method('getConfiguration')
+            ->will(self::returnValue($this->configuration));
+        /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
+
+        $session = new Session($manager);
+
+        $session->start();
+
+        $session->close();
+        $session->close();
     }
 
     /**
      * @runInSeparateProcess
      *
      * @expectedException \RuntimeException
-     * @expectedExceptionMessage Cannot regenerate id on a not started session
+     * @expectedExceptionMessage Cannot regenerate a not started session
      */
     public function testSessionRegenerateOnSessionNotStarted()
     {
-        $_SESSION = [];
-        session_unset();
-        session_destroy();
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('isSessionStarted')
+            ->will(self::onConsecutiveCalls(false));
+        /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
 
-        $this->session->regenerateSessionId();
+        $session = new Session($manager);
+
+        $session->regenerate();
     }
 
     /**
@@ -106,50 +198,43 @@ class SessionTest extends TestCase
      */
     public function testSessionRegenerate()
     {
-        $sessionId = session_id();
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('isSessionStarted')
+            ->will(self::onConsecutiveCalls(false, true, true));
+        $manager
+            ->expects(self::once())
+            ->method('sessionStart');
+        $manager
+            ->expects(self::any())
+            ->method('loadSessionData')
+            ->will(self::returnValue([]));
+        $manager
+            ->expects(self::once())
+            ->method('sessionReset');
+        $manager
+            ->expects(self::once())
+            ->method('getSessionId')
+            ->will(self::returnValue('00000000000000000000000000000000'));
+        $manager
+            ->expects(self::any())
+            ->method('getConfiguration')
+            ->will(self::returnValue($this->configuration));
+        /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
 
-        $this->session->set('saveKey', 'savedValue');
-        $this->session->regenerateSessionId();
+        $session = new Session($manager);
 
-        self::assertNotEquals($sessionId, session_id());
-        self::assertTrue($this->session->has('saveKey'));
-        self::assertEquals('savedValue', $this->session->get('saveKey'));
-    }
+        $session->start();
 
-    /**
-     * @runInSeparateProcess
-     */
-    public function testSessionTimeout()
-    {
-        $sessionId = session_id();
+        $session->set('saveKey', 'savedValue');
 
-        $passedTimeout = time() - 1000;
-        $this->session->set('__timeout__', $passedTimeout);
+        $session->regenerate();
 
-        $assert = $this;
-        $sessionHolder = new \stdClass();
-        $baseSession = $this->session;
-        $this->session->addListener(
-            'pre.session_timeout',
-            function ($event, $sessionId, $session) use ($assert, $sessionHolder, $baseSession) {
-                $assert::assertEquals($baseSession, $session);
-                $sessionHolder->id = $sessionId;
-            }
-        );
-
-        $this->session->addListener(
-            'post.session_timeout',
-            function ($event, $sessionId, $session) use ($assert, $sessionHolder, $baseSession) {
-                $assert::assertNotNull($sessionHolder->id);
-                $assert::assertNotEquals($sessionHolder->id, $sessionId);
-                $assert::assertEquals($baseSession, $session);
-            }
-        );
-
-        $this->session->manageTimeout();
-
-        self::assertNotEquals($sessionId, session_id());
-        self::assertTrue($this->session->has('__timeout__'));
-        self::assertTrue($passedTimeout < $this->session->get('__timeout__'));
+        self::assertEquals('00000000000000000000000000000000', $session->getId());
+        self::assertTrue($session->has('saveKey'));
+        self::assertEquals('savedValue', $session->get('saveKey'));
     }
 }

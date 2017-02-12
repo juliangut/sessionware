@@ -16,7 +16,7 @@ namespace Jgut\Middleware\Sessionware;
  */
 class Configuration
 {
-    use SessionTrait;
+    use SessionIniSettingsTrait;
 
     const LIFETIME_FLASH    = 300; // 5 minutes
     const LIFETIME_SHORT    = 600; // 10 minutes
@@ -25,7 +25,7 @@ class Configuration
     const LIFETIME_EXTENDED = 3600; // 1 hour
     const LIFETIME_INFINITE = PHP_INT_MAX; // Around 1145 years (x86_64)
 
-    const TIMEOUT_KEY_DEFAULT = '__SESSIONWARE_TIMEOUT_TIMESTAMP__';
+    const TIMEOUT_KEY_DEFAULT = '__SESSIONWARE_TIMEOUT__';
 
     const SESSION_NAME_DEFAULT = 'PHPSESSID';
 
@@ -35,6 +35,21 @@ class Configuration
      * @var string
      */
     protected $name;
+
+    /**
+     * @var string
+     */
+    protected $savePath;
+
+    /**
+     * @var int
+     */
+    protected $lifetime;
+
+    /**
+     * @var string
+     */
+    protected $timeoutKey;
 
     /**
      * @var string
@@ -57,37 +72,12 @@ class Configuration
     protected $cookieHttpOnly;
 
     /**
-     * @var string
-     */
-    protected $savePath;
-
-    /**
-     * @var int
-     */
-    protected $lifetime;
-
-    /**
-     * @var string
-     */
-    protected $timeoutKey;
-
-    /**
      * Configuration constructor.
      *
-     * @param array|\Traversable $configurations
-     *
-     * @throws \InvalidArgumentException
+     * @param array $configurations
      */
-    public function __construct($configurations = [])
+    public function __construct(array $configurations = [])
     {
-        if (!is_array($configurations) && !$configurations instanceof \Traversable) {
-            throw new \InvalidArgumentException('Configurations must be a traversable');
-        }
-
-        if ($configurations instanceof \Traversable) {
-            $configurations = iterator_to_array($configurations);
-        }
-
         $configurations = array_merge(
             $this->getDefaultSessionSettings(),
             $configurations
@@ -106,9 +96,10 @@ class Configuration
         $lifeTime = $this->getIntegerIniSetting('cookie_lifetime') === 0
             ? $this->getIntegerIniSetting('gc_maxlifetime')
             : min($this->getIntegerIniSetting('cookie_lifetime'), $this->getIntegerIniSetting('gc_maxlifetime'));
+        $sessionName = session_name() !== static::SESSION_NAME_DEFAULT ? session_name() : static::SESSION_NAME_DEFAULT;
 
         return [
-            'name'           => $this->getStringIniSetting('name', static::SESSION_NAME_DEFAULT),
+            'name'           => $this->getStringIniSetting('name', $sessionName),
             'savePath'       => $this->getStringIniSetting('save_path', sys_get_temp_dir()),
             'lifetime'       => $lifeTime > 0 ? $lifeTime : static::LIFETIME_DEFAULT,
             'timeoutKey'     => static::TIMEOUT_KEY_DEFAULT,
@@ -122,9 +113,9 @@ class Configuration
     /**
      * Seed configurations.
      *
-     * @param array|\Traversable $configurations
+     * @param array $configurations
      */
-    protected function seedConfigurations($configurations)
+    protected function seedConfigurations(array $configurations)
     {
         $configs = [
             'name',

@@ -11,33 +11,111 @@
 
 namespace Jgut\Middleware\Sessionware;
 
+use Jgut\Middleware\Sessionware\Manager\Manager;
+use Jgut\Middleware\Sessionware\Manager\Native;
 use League\Event\EmitterAwareInterface;
 use League\Event\EmitterTrait;
 use League\Event\Event;
 
 /**
  * Session helper.
- *
- * @SuppressWarnings(PHPMD.Superglobals)
  */
 class Session implements EmitterAwareInterface
 {
-    use SessionTrait;
     use EmitterTrait;
 
     /**
-     * @var Configuration
+     * @var Native
      */
-    protected $configuration;
+    protected $sessionManager;
+
+    /**
+     * Session data.
+     *
+     * @var array
+     */
+    protected $data = [];
 
     /**
      * Session constructor.
      *
-     * @param Configuration $configuration
+     * @param Manager $sessionManager
      */
-    public function __construct(Configuration $configuration)
+    public function __construct(Manager $sessionManager)
     {
-        $this->configuration = $configuration;
+        $this->sessionManager = $sessionManager;
+    }
+
+    /**
+     * Start session.
+     *
+     * @throws \RuntimeException
+     */
+    public function start()
+    {
+        if ($this->isActive()) {
+            return;
+        }
+
+        $this->sessionManager->sessionStart();
+
+        $this->data = $this->sessionManager->loadSessionData();
+
+        if ($this->sessionManager->shouldRegenerate()) {
+            $this->regenerate();
+        }
+
+        $this->manageTimeout();
+    }
+
+    /**
+     * Close session.
+     *
+     * @SuppressWarnings(PMD.Superglobals)
+     */
+    public function close()
+    {
+        if (!$this->isActive()) {
+            return;
+        }
+
+        $this->sessionManager->sessionEnd($this->data);
+    }
+
+    /**
+     * Regenerate session keeping parameters.
+     *
+     * @throws \RuntimeException
+     *
+     * @SuppressWarnings(PMD.Superglobals)
+     */
+    public function regenerate()
+    {
+        if (!$this->isActive()) {
+            throw new \RuntimeException('Cannot regenerate a not started session');
+        }
+
+        $this->sessionManager->sessionReset();
+    }
+
+    /**
+     * Is there an active session.
+     *
+     * @return bool
+     */
+    public function isActive()
+    {
+        return $this->sessionManager->isSessionStarted();
+    }
+
+    /**
+     * Get session identifier.
+     *
+     * @return string|null
+     */
+    public function getId()
+    {
+        return $this->sessionManager->getSessionId();
     }
 
     /**
@@ -49,7 +127,7 @@ class Session implements EmitterAwareInterface
      */
     public function has($key)
     {
-        return array_key_exists($key, $_SESSION);
+        return array_key_exists($key, $this->data);
     }
 
     /**
@@ -62,7 +140,7 @@ class Session implements EmitterAwareInterface
      */
     public function get($key, $default = null)
     {
-        return $this->has($key) ? $_SESSION[$key] : $default;
+        return array_key_exists($key, $this->data) ? $this->data[$key] : $default;
     }
 
     /**
@@ -75,7 +153,7 @@ class Session implements EmitterAwareInterface
      */
     public function set($key, $value)
     {
-        $_SESSION[$key] = $value;
+        $this->data[$key] = $value;
 
         return $this;
     }
@@ -89,8 +167,8 @@ class Session implements EmitterAwareInterface
      */
     public function remove($key)
     {
-        if ($this->has($key)) {
-            unset($_SESSION[$key]);
+        if (array_key_exists($key, $this->data)) {
+            unset($this->data[$key]);
         }
 
         return $this;
@@ -103,46 +181,38 @@ class Session implements EmitterAwareInterface
      */
     public function clear()
     {
-        $_SESSION = [];
+        $this->data = [];
 
         return $this;
     }
 
     /**
      * Manage session timeout.
+     *
+     * @throws \RuntimeException
      */
-    public function manageTimeout()
+    protected function manageTimeout()
     {
-        $timeoutKey = $this->configuration->getTimeoutKey();
+        $timeoutKey = $this->getConfiguration()->getTimeoutKey();
 
-        if (array_key_exists($timeoutKey, $_SESSION) && $_SESSION[$timeoutKey] < time()) {
+        if (array_key_exists($timeoutKey, $this->data) && $this->data[$timeoutKey] < time()) {
             $this->emit(Event::named('pre.session_timeout'), session_id(), $this);
 
-            $this->resetSession();
+            $this->sessionManager->sessionReset();
 
             $this->emit(Event::named('post.session_timeout'), session_id(), $this);
         }
 
-        $_SESSION[$timeoutKey] = time() + $this->configuration->getLifetime();
+        $this->data[$timeoutKey] = time() + $this->getConfiguration()->getLifetime();
     }
 
     /**
-     * Regenerate session identifier keeping session parameters.
+     * Get session configuration.
      *
-     * @throws \RuntimeException
+     * @return Configuration
      */
-    public function regenerateSessionId()
+    protected function getConfiguration()
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            throw new \RuntimeException('Cannot regenerate id on a not started session');
-        }
-
-        $sessionBackup = is_array($_SESSION) ? $_SESSION : [];
-
-        $this->resetSession();
-
-        foreach ($sessionBackup as $param => $value) {
-            $_SESSION[$param] = $value;
-        }
+        return $this->sessionManager->getConfiguration();
     }
 }

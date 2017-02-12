@@ -19,15 +19,6 @@ use PHPUnit\Framework\TestCase;
  */
 class ConfigurationTest extends TestCase
 {
-    /**
-     * @expectedException \InvalidArgumentException
-     * #@expectedExceptionMessage Configurations must be a traversable
-     */
-    public function testInvalidConfigurations()
-    {
-        new Configuration('');
-    }
-
     public function testDefaults()
     {
         $configuration = new Configuration();
@@ -44,7 +35,6 @@ class ConfigurationTest extends TestCase
 
     /**
      * @runInSeparateProcess
-     * @preserveGlobalState disabled
      */
     public function testFromEnvironment()
     {
@@ -80,7 +70,7 @@ class ConfigurationTest extends TestCase
 
     public function testFromConfigurations()
     {
-        $configs = new \ArrayIterator([
+        $configs = [
             'name'           => 'SESSION',
             'savePath'       => sys_get_temp_dir() . '/SESS',
             'lifetime'       => Configuration::LIFETIME_SHORT,
@@ -89,7 +79,7 @@ class ConfigurationTest extends TestCase
             'cookieDomain'   => 'example.com',
             'cookieSecure'   => true,
             'cookieHttpOnly' => true,
-        ]);
+        ];
 
         $configuration = new Configuration($configs);
 

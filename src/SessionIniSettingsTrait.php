@@ -14,7 +14,7 @@ namespace Jgut\Middleware\Sessionware;
 /**
  * Session management trait.
  */
-trait SessionTrait
+trait SessionIniSettingsTrait
 {
     /**
      * Get string ini setting.
@@ -88,37 +88,5 @@ trait SessionTrait
     private function normalizeSessionIniSetting($setting)
     {
         return strpos($setting, 'session.') !== 0 ? 'session.' . $setting : $setting;
-    }
-
-    /**
-     * Close previous session and create a new empty one.
-     *
-     * @SuppressWarnings(PHPMD.Superglobals)
-     */
-    protected function resetSession()
-    {
-        $_SESSION = [];
-        session_unset();
-        session_destroy();
-
-        session_id($this->getNewSessionId());
-
-        session_start();
-    }
-
-    /**
-     * Generates cryptographically secure session identifier.
-     *
-     * @param int $length
-     *
-     * @return string
-     */
-    protected function getNewSessionId($length = Configuration::SESSION_ID_LENGTH)
-    {
-        return substr(
-            preg_replace('/[^a-zA-Z0-9-]+/', '', base64_encode(random_bytes((int) $length))),
-            0,
-            (int) $length
-        );
     }
 }
