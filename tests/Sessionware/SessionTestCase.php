@@ -27,7 +27,7 @@ abstract class SessionTestCase extends TestCase
         ini_set('session.use_cookies', true);
         ini_set('session.use_only_cookies', true);
         ini_set('session.use_strict_mode', false);
-        ini_set('session.cache_limiter', null);
+        ini_set('session.cache_limiter', '');
 
         ini_set('session.gc_probability', 1);
         ini_set('session.gc_divisor', 2);

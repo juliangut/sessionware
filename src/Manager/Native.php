@@ -58,11 +58,7 @@ class Native implements Manager
             throw new \RuntimeException('Session has already been started. Check "session.auto_start" ini setting');
         }
 
-        if (!$this->isCli()) {
-            // @codeCoverageIgnoreStart
-            $this->verifyIniSettings();
-            // @codeCoverageIgnoreEnd
-        }
+        $this->verifyIniSettings();
 
         $this->configuration = $configuration;
 
@@ -268,21 +264,9 @@ class Native implements Manager
     }
 
     /**
-     * Check if running on CLI.
-     *
-     * @return bool
-     */
-    protected function isCli()
-    {
-        return \PHP_SAPI === 'cli';
-    }
-
-    /**
      * Verify session ini settings.
      *
      * @throws \RuntimeException
-     *
-     * @codeCoverageIgnore
      */
     final protected function verifyIniSettings()
     {
@@ -302,7 +286,7 @@ class Native implements Manager
             throw new \RuntimeException('"session.use_strict_mode" ini setting must be set to false');
         }
 
-        if ($this->hasBoolIniSetting('cache_limiter') !== null) {
+        if ($this->getStringIniSetting('cache_limiter') !== '') {
             throw new \RuntimeException('"session.cache_limiter" ini setting must be set to empty string');
         }
     }

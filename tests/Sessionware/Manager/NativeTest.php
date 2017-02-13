@@ -72,6 +72,61 @@ class NativeTest extends SessionTestCase
         new Native($this->configuration);
     }
 
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage "session.use_trans_sid" ini setting must be set to false
+     */
+    public function testInvalidSessionUseTransSid()
+    {
+        ini_set('session.use_trans_sid', true);
+
+        new Native($this->configuration);
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage "session.use_cookies" ini setting must be set to true
+     */
+    public function testInvalidSessionUseCookies()
+    {
+        ini_set('session.use_cookies', false);
+
+        new Native($this->configuration);
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage "session.use_only_cookies" ini setting must be set to true
+     */
+    public function testInvalidSessionUseOnlyCookies()
+    {
+        ini_set('session.use_only_cookies', false);
+
+        new Native($this->configuration);
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage "session.use_strict_mode" ini setting must be set to false
+     */
+    public function testInvalidSessionUseStrictMode()
+    {
+        ini_set('session.use_strict_mode', true);
+
+        new Native($this->configuration);
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage "session.cache_limiter" ini setting must be set to empty string
+     */
+    public function testInvalidSessionCacheLimiter()
+    {
+        ini_set('session.cache_limiter', 'nocache');
+
+        new Native($this->configuration);
+    }
+
     public function testCreation()
     {
         new Native($this->configuration);
