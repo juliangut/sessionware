@@ -9,15 +9,12 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
-namespace Jgut\Middleware\Sessionware\Tests\Stubs;
-
-use Jgut\Middleware\Sessionware\Handler\Handler;
-use Jgut\Middleware\Sessionware\Handler\HandlerTrait;
+namespace Jgut\Middleware\Sessionware\Handler;
 
 /**
- * In memory session handler stub.
+ * In-memory session handler.
  */
-class MemoryHandlerStub implements Handler
+class Memory implements Handler
 {
     use HandlerTrait;
 
@@ -28,9 +25,13 @@ class MemoryHandlerStub implements Handler
 
     /**
      * {@inheritdoc}
+     *
+     * @throws \RuntimeException
      */
     public function open($savePath, $sessionName)
     {
+        $this->testConfiguration();
+
         return true;
     }
 
@@ -65,6 +66,8 @@ class MemoryHandlerStub implements Handler
      */
     public function destroy($sessionId)
     {
+        $this->data = [];
+
         return true;
     }
 

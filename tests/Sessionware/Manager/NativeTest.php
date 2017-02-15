@@ -12,10 +12,9 @@
 namespace Jgut\Middleware\Sessionware\Tests\Manager;
 
 use Jgut\Middleware\Sessionware\Configuration;
-use Jgut\Middleware\Sessionware\Handler\Dummy;
+use Jgut\Middleware\Sessionware\Handler\Memory;
 use Jgut\Middleware\Sessionware\Manager\Native;
 use Jgut\Middleware\Sessionware\Tests\SessionTestCase;
-use Jgut\Middleware\Sessionware\Tests\Stubs\MemoryHandlerStub;
 
 /**
  * Native PHP session handler test class.
@@ -57,7 +56,7 @@ class NativeTest extends SessionTestCase
         /* @var Configuration $configuration */
 
         $this->configuration = $configuration;
-        $this->handler = new Dummy();
+        $this->handler = new Memory();
     }
 
     /**
@@ -227,7 +226,7 @@ class NativeTest extends SessionTestCase
      */
     public function testSessionLoad()
     {
-        $handler = new MemoryHandlerStub();
+        $handler = new Memory();
 
         $manager = new Native($this->configuration, $handler);
 

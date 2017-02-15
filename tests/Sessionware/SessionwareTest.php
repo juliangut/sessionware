@@ -12,7 +12,7 @@
 namespace Jgut\Middleware\Sessionware\Tests;
 
 use Jgut\Middleware\Sessionware\Configuration;
-use Jgut\Middleware\Sessionware\Handler\Dummy;
+use Jgut\Middleware\Sessionware\Handler\Memory;
 use Jgut\Middleware\Sessionware\Manager\Native;
 use Jgut\Middleware\Sessionware\Session;
 use Jgut\Middleware\Sessionware\Sessionware;
@@ -123,7 +123,7 @@ class SessionwareTest extends SessionTestCase
      */
     public function testSessionCookie()
     {
-        $manager = new Native($this->configuration, new Dummy());
+        $manager = new Native($this->configuration, new Memory());
 
         $middleware = new Sessionware($manager);
 
