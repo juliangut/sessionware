@@ -9,12 +9,12 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
-namespace Jgut\Middleware\Sessionware;
+namespace Jgut\Middleware\Sessionware\Traits;
 
 /**
- * Session management trait.
+ * Native session management trait.
  */
-trait SessionIniSettingsTrait
+trait NativeSessionTrait
 {
     /**
      * Get string ini setting.

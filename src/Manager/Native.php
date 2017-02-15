@@ -14,14 +14,14 @@ namespace Jgut\Middleware\Sessionware\Manager;
 use Jgut\Middleware\Sessionware\Configuration;
 use Jgut\Middleware\Sessionware\Handler\Handler;
 use Jgut\Middleware\Sessionware\Handler\Native as NativeHandler;
-use Jgut\Middleware\Sessionware\SessionIniSettingsTrait;
+use Jgut\Middleware\Sessionware\Traits\NativeSessionTrait;
 
 /**
  * Native PHP session manager.
  */
 class Native implements Manager
 {
-    use SessionIniSettingsTrait;
+    use NativeSessionTrait;
 
     /**
      * @var Configuration
@@ -103,14 +103,12 @@ class Native implements Manager
      * {@inheritdoc}
      *
      * @throws \RuntimeException
+     *
+     * @return array|null
      */
     public function sessionStart()
     {
-        if ($this->sessionStarted) {
-            return;
-        }
-
-        if (session_status() === PHP_SESSION_ACTIVE) {
+        if ($this->sessionStarted || session_status() === PHP_SESSION_ACTIVE) {
             throw new \RuntimeException('Session has already been started. Check "session.auto_start" ini setting');
         }
 
@@ -127,6 +125,8 @@ class Native implements Manager
         $this->sessionInitialize();
 
         $this->sessionStarted = true;
+
+        return $this->sessionLoadData();
     }
 
     /**
@@ -139,6 +139,8 @@ class Native implements Manager
         if ($this->sessionId) {
             session_id($this->sessionId);
         }
+
+        session_name($this->configuration->getName());
 
         session_start();
 
@@ -154,22 +156,14 @@ class Native implements Manager
     }
 
     /**
-     * {@inheritdoc}
+     * Retrieve session saved data.
      *
-     * @throws \RuntimeException
+     * @return array
      *
      * @SuppressWarnings(PHPMD.Superglobals)
      */
-    public function loadSessionData()
+    final protected function sessionLoadData()
     {
-        if (!$this->sessionStarted) {
-            throw new \RuntimeException('Cannot load data from a not started session');
-        }
-
-        if (!isset($_SESSION)) {
-            return [];
-        }
-
         $keyPattern = '/^' . $this->configuration->getName() . '\./';
         $data = [];
         foreach ($_SESSION as $key => $value) {
@@ -178,9 +172,39 @@ class Native implements Manager
             }
         }
 
-        unset($_SESSION);
+        $_SESSION = null;
 
         return $data;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @throws \RuntimeException
+     *
+     * @SuppressWarnings(PMD.Superglobals)
+     */
+    public function sessionRegenerateId()
+    {
+        if (!$this->sessionStarted) {
+            throw new \RuntimeException('Cannot regenerate id a not started session');
+        }
+
+        $_SESSION = null;
+        session_unset();
+        session_destroy();
+
+        $this->sessionStarted = false;
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            // @codeCoverageIgnoreStart
+            throw new \RuntimeException('PHP session failed to regenerate id');
+            // @codeCoverageIgnoreEnd
+        }
+
+        $this->sessionId = $this->getNewSessionId();
+
+        $this->sessionStart();
     }
 
     /**
@@ -205,7 +229,7 @@ class Native implements Manager
 
         session_write_close();
 
-        unset($_SESSION);
+        $_SESSION = null;
 
         $this->sessionStarted = false;
         $this->sessionId = null;
@@ -224,27 +248,23 @@ class Native implements Manager
      *
      * @SuppressWarnings(PMD.Superglobals)
      */
-    public function sessionReset()
+    public function sessionDestroy()
     {
         if (!$this->sessionStarted) {
-            throw new \RuntimeException('Cannot reset a not started session');
+            throw new \RuntimeException('Cannot destroy a not started session');
         }
 
         unset($_SESSION);
         session_unset();
         session_destroy();
 
+        $this->sessionStarted = false;
+
         if (session_status() === PHP_SESSION_ACTIVE) {
             // @codeCoverageIgnoreStart
             throw new \RuntimeException('PHP session failed to finish');
             // @codeCoverageIgnoreEnd
         }
-
-        $this->sessionStarted = false;
-
-        $this->sessionId = $this->getNewSessionId();
-
-        $this->sessionStart();
     }
 
     /**
@@ -258,7 +278,7 @@ class Native implements Manager
     /**
      * {@inheritdoc}
      */
-    public function shouldRegenerate()
+    public function shouldRegenerateId()
     {
         return strlen($this->sessionId) !== Configuration::SESSION_ID_LENGTH;
     }
@@ -297,9 +317,7 @@ class Native implements Manager
     protected function configureSessionSerializer()
     {
         // Use better session serializer when available
-        if ($this->getIniSetting('serialize_handler') !== 'php_serialize'
-            && version_compare(PHP_VERSION, '5.5.4', '>=')
-        ) {
+        if ($this->getIniSetting('serialize_handler') !== 'php_serialize') {
             // @codeCoverageIgnoreStart
             $this->setIniSetting('serialize_handler', 'php_serialize');
             // @codeCoverageIgnoreEnd
@@ -338,7 +356,7 @@ class Native implements Manager
      *
      * @return string
      */
-    final protected function getNewSessionId($length = Configuration::SESSION_ID_LENGTH)
+    private function getNewSessionId($length = Configuration::SESSION_ID_LENGTH)
     {
         return substr(
             preg_replace('/[^a-zA-Z0-9-]+/', '', base64_encode(random_bytes((int) $length))),

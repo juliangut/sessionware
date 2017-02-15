@@ -12,7 +12,7 @@
 namespace Jgut\Middleware\Sessionware\Handler;
 
 use Jgut\Middleware\Sessionware\Configuration;
-use Jgut\Middleware\Sessionware\SessionIniSettingsTrait;
+use Jgut\Middleware\Sessionware\Traits\NativeSessionTrait;
 
 /**
  * Native PHP session handler.
@@ -20,7 +20,7 @@ use Jgut\Middleware\Sessionware\SessionIniSettingsTrait;
 class Native extends \SessionHandler implements Handler
 {
     use HandlerTrait;
-    use SessionIniSettingsTrait;
+    use NativeSessionTrait;
 
     /**
      * @var bool

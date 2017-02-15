@@ -144,7 +144,7 @@ class SessionwareTest extends SessionTestCase
 
             $assert::assertEquals($sessionId, $session->getId());
 
-            $session->regenerate();
+            $session->regenerateId();
 
             $sessionId = $session->getId();
 

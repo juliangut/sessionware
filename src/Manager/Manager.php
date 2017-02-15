@@ -39,6 +39,8 @@ interface Manager
 
     /**
      * Start session.
+     *
+     * @return array
      */
     public function sessionStart();
 
@@ -50,9 +52,14 @@ interface Manager
     public function sessionEnd(array $data = []);
 
     /**
-     * Reset session.
+     * Regenerate session identifier.
      */
-    public function sessionReset();
+    public function sessionRegenerateId();
+
+    /**
+     * Destroy session.
+     */
+    public function sessionDestroy();
 
     /**
      * Is session started.
@@ -62,16 +69,9 @@ interface Manager
     public function isSessionStarted();
 
     /**
-     * Should session be regenerated.
+     * Should session identifier be regenerated.
      *
      * @return bool
      */
-    public function shouldRegenerate();
-
-    /**
-     * Retrieve loaded session data.
-     *
-     * @return array
-     */
-    public function loadSessionData();
+    public function shouldRegenerateId();
 }

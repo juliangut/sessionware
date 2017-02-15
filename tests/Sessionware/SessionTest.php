@@ -103,18 +103,15 @@ class SessionTest extends SessionTestCase
             ->will(self::onConsecutiveCalls(false, false, true, true));
         $manager
             ->expects(self::once())
-            ->method('sessionStart');
-        $manager
-            ->expects(self::any())
-            ->method('loadSessionData')
+            ->method('sessionStart')
             ->will(self::returnValue([]));
         $manager
             ->expects(self::any())
-            ->method('shouldRegenerate')
+            ->method('shouldRegenerateId')
             ->will(self::returnValue(true));
         $manager
             ->expects(self::once())
-            ->method('sessionReset');
+            ->method('sessionRegenerateId');
         $manager
             ->expects(self::any())
             ->method('getConfiguration')
@@ -129,6 +126,7 @@ class SessionTest extends SessionTestCase
         $session->start();
 
         self::assertTrue($session->has(Configuration::TIMEOUT_KEY_DEFAULT));
+        self::assertEquals($session->getTimeout(), $session->get(Configuration::TIMEOUT_KEY_DEFAULT));
     }
 
     /**
@@ -145,14 +143,11 @@ class SessionTest extends SessionTestCase
             ->will(self::onConsecutiveCalls(false, true, false));
         $manager
             ->expects(self::once())
-            ->method('sessionStart');
-        $manager
-            ->expects(self::any())
-            ->method('loadSessionData')
+            ->method('sessionStart')
             ->will(self::returnValue([]));
         $manager
             ->expects(self::any())
-            ->method('shouldRegenerate')
+            ->method('shouldRegenerateId')
             ->will(self::returnValue(false));
         $manager
             ->expects(self::once())
@@ -177,7 +172,7 @@ class SessionTest extends SessionTestCase
      * @expectedException \RuntimeException
      * @expectedExceptionMessage Cannot regenerate a not started session
      */
-    public function testSessionRegenerateOnSessionNotStarted()
+    public function testSessionRegenerateIdOnSessionNotStarted()
     {
         $manager = $this->getMockBuilder(Native::class)
             ->disableOriginalConstructor()
@@ -185,18 +180,18 @@ class SessionTest extends SessionTestCase
         $manager
             ->expects(self::any())
             ->method('isSessionStarted')
-            ->will(self::onConsecutiveCalls(false));
+            ->will(self::returnValue(false));
         /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
 
         $session = new Session($manager);
 
-        $session->regenerate();
+        $session->regenerateId();
     }
 
     /**
      * @runInSeparateProcess
      */
-    public function testSessionRegenerate()
+    public function testSessionRegenerateId()
     {
         $manager = $this->getMockBuilder(Native::class)
             ->disableOriginalConstructor()
@@ -207,14 +202,11 @@ class SessionTest extends SessionTestCase
             ->will(self::onConsecutiveCalls(false, true, true));
         $manager
             ->expects(self::once())
-            ->method('sessionStart');
-        $manager
-            ->expects(self::any())
-            ->method('loadSessionData')
+            ->method('sessionStart')
             ->will(self::returnValue([]));
         $manager
             ->expects(self::once())
-            ->method('sessionReset');
+            ->method('sessionRegenerateId');
         $manager
             ->expects(self::once())
             ->method('getSessionId')
@@ -231,10 +223,68 @@ class SessionTest extends SessionTestCase
 
         $session->set('saveKey', 'savedValue');
 
-        $session->regenerate();
+        $session->regenerateId();
 
         self::assertEquals('00000000000000000000000000000000', $session->getId());
         self::assertTrue($session->has('saveKey'));
         self::assertEquals('savedValue', $session->get('saveKey'));
+    }
+
+    /**
+     * @runInSeparateProcess
+     *
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage Cannot destroy a not started session
+     */
+    public function testSessionDestroyOnSessionNotStarted()
+    {
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('isSessionStarted')
+            ->will(self::returnValue(false));
+        /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
+
+        $session = new Session($manager);
+
+        $session->destroy();
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testSessionDestroy()
+    {
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('isSessionStarted')
+            ->will(self::onConsecutiveCalls(false, true, true));
+        $manager
+            ->expects(self::once())
+            ->method('sessionStart')
+            ->will(self::returnValue([]));
+        $manager
+            ->expects(self::once())
+            ->method('sessionDestroy');
+        $manager
+            ->expects(self::any())
+            ->method('getConfiguration')
+            ->will(self::returnValue($this->configuration));
+        /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
+
+        $session = new Session($manager);
+
+        $session->start();
+
+        $session->set('saveKey', 'savedValue');
+
+        $session->destroy();
+
+        self::assertFalse($session->has('saveKey'));
     }
 }

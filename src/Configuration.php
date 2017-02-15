@@ -11,12 +11,14 @@
 
 namespace Jgut\Middleware\Sessionware;
 
+use Jgut\Middleware\Sessionware\Traits\NativeSessionTrait;
+
 /**
  * Session configuration.
  */
 class Configuration
 {
-    use SessionIniSettingsTrait;
+    use NativeSessionTrait;
 
     const LIFETIME_FLASH    = 300; // 5 minutes
     const LIFETIME_SHORT    = 600; // 10 minutes
@@ -93,7 +95,7 @@ class Configuration
      */
     protected function getDefaultSessionSettings()
     {
-        $lifeTime = $this->getIntegerIniSetting('cookie_lifetime') === 0
+        $sessionLifetime = $this->getIntegerIniSetting('cookie_lifetime') === 0
             ? $this->getIntegerIniSetting('gc_maxlifetime')
             : min($this->getIntegerIniSetting('cookie_lifetime'), $this->getIntegerIniSetting('gc_maxlifetime'));
         $sessionName = session_name() !== static::SESSION_NAME_DEFAULT ? session_name() : static::SESSION_NAME_DEFAULT;
@@ -101,7 +103,7 @@ class Configuration
         return [
             'name'           => $this->getStringIniSetting('name', $sessionName),
             'savePath'       => $this->getStringIniSetting('save_path', sys_get_temp_dir()),
-            'lifetime'       => $lifeTime > 0 ? $lifeTime : static::LIFETIME_DEFAULT,
+            'lifetime'       => $sessionLifetime > 0 ? $sessionLifetime : static::LIFETIME_DEFAULT,
             'timeoutKey'     => static::TIMEOUT_KEY_DEFAULT,
             'cookiePath'     => $this->getStringIniSetting('cookie_path', '/'),
             'cookieDomain'   => $this->getStringIniSetting('cookie_domain'),

@@ -15,6 +15,7 @@ use Jgut\Middleware\Sessionware\Configuration;
 use Jgut\Middleware\Sessionware\Handler\Dummy;
 use Jgut\Middleware\Sessionware\Manager\Native;
 use Jgut\Middleware\Sessionware\Tests\SessionTestCase;
+use Jgut\Middleware\Sessionware\Tests\Stubs\MemoryHandlerStub;
 
 /**
  * Native PHP session handler test class.
@@ -193,6 +194,20 @@ class NativeTest extends SessionTestCase
 
     /**
      * @runInSeparateProcess
+     *
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage Session has already been started
+     */
+    public function testSessionNoRestart()
+    {
+        $manager = new Native($this->configuration, $this->handler);
+
+        $manager->sessionStart();
+        $manager->sessionStart();
+    }
+
+    /**
+     * @runInSeparateProcess
      */
     public function testSessionStart()
     {
@@ -202,10 +217,28 @@ class NativeTest extends SessionTestCase
 
         self::assertTrue($manager->isSessionStarted());
 
-        $manager->sessionStart();
-
+        self::assertEquals($this->configuration->getName(), session_name());
         self::assertNotNull($manager->getSessionId());
         self::assertTrue($manager->isSessionStarted());
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testSessionLoad()
+    {
+        $handler = new MemoryHandlerStub();
+
+        $manager = new Native($this->configuration, $handler);
+
+        $manager->sessionStart();
+
+        $manager->sessionEnd(['sessionVar' => 'sessionValue']);
+
+        $sessionData = $manager->sessionStart();
+
+        self::assertInternalType('array', $sessionData);
+        self::assertTrue(array_key_exists('sessionVar', $sessionData));
     }
 
     /**
@@ -230,8 +263,6 @@ class NativeTest extends SessionTestCase
 
         $manager->sessionStart();
 
-        self::assertTrue(isset($_SESSION));
-
         $manager->sessionEnd(['sessionKey' => 'sessionValue']);
 
         self::assertFalse($manager->isSessionStarted());
@@ -242,81 +273,60 @@ class NativeTest extends SessionTestCase
      * @runInSeparateProcess
      *
      * @expectedException \RuntimeException
-     * @expectedExceptionMessage Cannot reset a not started session
+     * @expectedExceptionMessage Cannot regenerate id a not started session
      */
-    public function testSessionResetNotAllowed()
+    public function testSessionRegenerateIdNotAllowed()
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        $manager->sessionReset();
+        $manager->sessionRegenerateId();
     }
 
     /**
      * @runInSeparateProcess
      */
-    public function testSessionReset()
+    public function testSessionRegenerateId()
     {
         $manager = new Native($this->configuration, $this->handler);
 
         $manager->sessionStart();
 
-        self::assertTrue(isset($_SESSION));
-        self::assertTrue($manager->shouldRegenerate());
+        self::assertTrue($manager->shouldRegenerateId());
 
         $originalSessionId = $manager->getSessionId();
 
-        $manager->sessionReset();
+        $manager->sessionRegenerateId();
 
         self::assertNotEquals($originalSessionId, $manager->getSessionId());
-        self::assertTrue(isset($_SESSION));
-        self::assertFalse($manager->shouldRegenerate());
+        self::assertEquals($this->configuration->getName(), session_name());
+        self::assertFalse(isset($_SESSION));
+        self::assertFalse($manager->shouldRegenerateId());
     }
 
     /**
      * @runInSeparateProcess
      *
      * @expectedException \RuntimeException
-     * @expectedExceptionMessage Cannot load data from a not started session
+     * @expectedExceptionMessage Cannot destroy a not started session
      */
-    public function testSessionDataLoadNotAllowed()
+    public function testSessionDestroyNotAllowed()
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        $manager->loadSessionData();
+        $manager->sessionDestroy();
     }
 
     /**
      * @runInSeparateProcess
      */
-    public function testDataLoadFromClosedSession()
+    public function testSessionDestroy()
     {
         $manager = new Native($this->configuration, $this->handler);
 
         $manager->sessionStart();
 
-        $_SESSION[$this->configuration->getName() . '.savedKey'] = 'savedValue';
+        $manager->sessionDestroy();
 
-        unset($_SESSION);
-
-        $loadedData = $manager->loadSessionData();
-
-        self::assertEquals([], $loadedData);
-    }
-
-    /**
-     * @runInSeparateProcess
-     */
-    public function testSessionDataLoad()
-    {
-        $manager = new Native($this->configuration, $this->handler);
-
-        $manager->sessionStart();
-
-        $_SESSION[$this->configuration->getName() . '.savedKey'] = 'savedValue';
-
-        $loadedData = $manager->loadSessionData();
-
-        self::assertTrue(isset($loadedData['savedKey']));
-        self::assertEquals('savedValue', $loadedData['savedKey']);
+        self::assertFalse(isset($_SESSION));
     }
 }
