@@ -22,7 +22,7 @@ use Zend\Diactoros\Response;
 use Zend\Diactoros\ServerRequestFactory;
 
 /**
- * PHP session handler middleware t_est class.
+ * Session handling middleware test class.
  */
 class SessionwareTest extends SessionTestCase
 {
@@ -32,12 +32,12 @@ class SessionwareTest extends SessionTestCase
     protected $configuration;
 
     /**
-     * @var \Psr\Http\Message\ServerRequestInterface
+     * @var ServerRequestInterface
      */
     protected $request;
 
     /**
-     * @var \Psr\Http\Message\ResponseInterface
+     * @var ResponseInterface
      */
     protected $response;
 
@@ -86,9 +86,6 @@ class SessionwareTest extends SessionTestCase
         $this->response = new Response;
     }
 
-    /**
-     * @runInSeparateProcess
-     */
     public function testSessionNotStarted()
     {
         $manager = $this->getMockBuilder(Native::class)
@@ -118,9 +115,6 @@ class SessionwareTest extends SessionTestCase
         self::assertEmpty($response->getHeaderLine('Set-Cookie'));
     }
 
-    /**
-     * @runInSeparateProcess
-     */
     public function testSessionCookie()
     {
         $manager = new Native($this->configuration, new Memory());

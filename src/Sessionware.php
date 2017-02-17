@@ -16,7 +16,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * PHP session handling middleware.
+ * Session handling middleware.
  */
 class Sessionware
 {
@@ -55,7 +55,7 @@ class Sessionware
     }
 
     /**
-     * Execute the middleware.
+     * Execute middleware.
      *
      * @param ServerRequestInterface $request
      * @param ResponseInterface      $response
@@ -94,9 +94,7 @@ class Sessionware
     protected function respondWithSessionCookie(ResponseInterface $response)
     {
         if (!$this->session->isActive()) {
-            // @codeCoverageIgnoreStart
             return $response;
-            // @codeCoverageIgnoreEnd
         }
 
         $configuration = $this->getConfiguration();

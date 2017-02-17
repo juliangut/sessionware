@@ -28,6 +28,7 @@ class MemoryTest extends SessionTestCase
         $configuration = $this->getMockBuilder(Configuration::class)
             ->disableOriginalConstructor()
             ->getMock();
+        /* @var Configuration $configuration */
 
         $handler = new Memory();
         $handler->setConfiguration($configuration);
