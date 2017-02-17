@@ -115,6 +115,9 @@ class SessionwareTest extends SessionTestCase
         self::assertEmpty($response->getHeaderLine('Set-Cookie'));
     }
 
+    /**
+     * @runInSeparateProcess
+     */
     public function testSessionCookie()
     {
         $manager = new Native($this->configuration, new Memory());
