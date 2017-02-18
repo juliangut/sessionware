@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware\Tests;
+namespace Jgut\Sessionware\Tests;
 
 use PHPUnit\Framework\TestCase;
 

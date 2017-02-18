@@ -10,37 +10,11 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/juliangut/sessionware.svg?style=flat-square)](https://packagist.org/packages/juliangut/sessionware/stats)
 [![Monthly Downloads](https://img.shields.io/packagist/dm/juliangut/sessionware.svg?style=flat-square)](https://packagist.org/packages/juliangut/sessionware/stats)
 
-# SessionWare
+# PSR7 compatible session management
 
-A PSR7 session management.
+Encapsulates PHP session management into a nice API compatible with PSR7.
 
 Generates a 80 character long session_id using `random_bytes`, a truly cryptographically secure pseudo-random generator, instead of `session.hash_function` hash algorithm.
-
-#### Important considerations
-
-Be aware that this middleware needs some session ini settings to be set to specific values:
-
-* `session.use_trans_sid` to `false`
-* `session.use_cookies` to `true`
-* `session.use_only_cookies` to `true`
-* `session.use_strict_mode` to `false`
-* `session.cache_limiter` to `''` (empty string)
-
-This values will prevent session headers to be automatically sent to user. **It's the developer's responsibility to include corresponding cache headers in response object**, which should be the case in the first place instead of relying on PHP environment settings.
-
-When using this middleware don't make use of any PHP native session handling "session_*" function but leverage `\Jgut\Middleware\Sessionware\Session` corresponding methods:
-
-* `Session::start()` for session starting
-* `Session::isActive()` for verification of active session
-* `Session::getId()` for session id retrieval
-* `Session::regenerateId()` for cryptographically secure session id regeneration
-* `Session::close()` for closing session saving its contents
-* `Session::destroy()` for destroying session and all its contents
-* `Session::has($var)` for verifying a variable is saved in session
-* `Session::set($var, $val)` for saving a variable into session
-* `Session::get($var)` for getting a variable from session
-* `Session::remove($var)` for removing a variable from session
-* `Session::clear()` for emptying session variables
 
 ## Installation
 
@@ -54,23 +28,33 @@ composer require juliangut/sessionware
 
 ```php
 require 'vendor/autoload.php';
+```
 
-use \Jgut\Middleware\SessionWare
+Stand alone session management.
 
-$configuration = [
+```php
+use \Jgut\Middleware\Sessionware\Configuration;
+use \Jgut\Middleware\Sessionware\Handler\Native as NativeHandler;
+use \Jgut\Middleware\Sessionware\Manager\Native as NativeManager;
+use \Jgut\Middleware\Sessionware\Session;
+
+$sessionSettings = [
   'name' => 'myProjectSessionName',
-  'lifetime' => 1800, // 30 minutes
+  'lifetime' => Configuration::LIFETIME_EXTENDED, // 1 hour
 ];
+$configuration = new Configuration($sessionSettings);
+$handler = new NativeHandler();
+$manager = new NativeManager($configuration, $sessionHandler);
 
-$sessionMiddleware = new SessionWare($configuration);
+$manger->setSessionId('Get session id from cookie');
 
-// Get $request and $response from PSR7 implementation
-$request = new Request();
-$response = new Response();
+$session = new Session($manager);
 
-$response = $sessionMiddleware($request, $response, function() { });
+$session->start();
 
-// Session is started, populated with default parameters and response has session cookie header
+$session->set('sessionKey', 'value');
+
+$session->close();
 ```
 
 Integrated on a Middleware workflow:
@@ -78,51 +62,57 @@ Integrated on a Middleware workflow:
 ```php
 require 'vendor/autoload.php';
 
-use \Jgut\Middleware\SessionWare
+use \Jgut\Middleware\Sessionware\Configuration;
+use \Jgut\Middleware\Sessionware\Handler\Native as NativeHandler;
+use \Jgut\Middleware\Sessionware\Manager\Native as NativeManager;
+use \Jgut\Middleware\Sessionware\Middleware\SessionHandling;
+use \Jgut\Middleware\Sessionware\Middleware\SessionStart;
 
-$configuration = [
+$sessionSettings = [
   'name' => 'myProjectSessionName',
-  'lifetime' => SessionWare::SESSION_LIFETIME_NORMAL, // 15 minutes
+  'lifetime' => Configuration::LIFETIME_EXTENDED, // 1 hour
 ];
-$defaultSessionParams = [
-  'default_timezone' => 'UTC',
-]
+$configuration = new Configuration($sessionSettings);
+$handler = new NativeHandler();
+$manager = new NativeManager($configuration, $sessionHandler);
 
 $app = new \YourMiddlewareAwareApplication();
-$app->addMiddleware(new SessionWare($configuration, $defaultParameters));
+$app->addMiddleware(new SessionHandling($manager));
+$app->addMiddleware(new SessionStart());
+
+// Routes
+
 $app->run();
 ```
 
-#### Session helper
-
-There is an extra Session helper to abstract access to the $_SESSION variable. This is usefull for example when NOT accessing global variables is important for you (such as when using PHP_MD to statically analise your code)
-
-In order to benefit from SessionWare cryptographically secure generated session id DO use
-
-```
-$session = new \Jgut\Middleware\Session;
-$session->regenerate();
-
-// Or can be called statically
-\Jgut\Middleware\Session::regenerateSessionId()
-```
-
-### Config
+### Configuration
 
 ```php
-$sessionMiddleware = new SessionWare([
-  'timeoutKey' => '__SESSIONWARE_TIMEOUT_TIMESTAMP__'
-  'name' => 'SessionWareSession',
-  'savePath' => '/tmp/SessionWareSession',
+$configuration = new Configuration([
+  'name' => 'Sessionware',
+  'savePath' => '/tmp/Sessionware',
   'lifetime' => SessionWare::SESSION_LIFETIME_NORMAL,
-  'domain' => 'http://example.com',
-  'path' => '/',
-  'secure' => false,
-  'httponly' => true,
+  'timeoutKey' => '__SESSIONWARE_TIMEOUT_TIMESTAMP__',
+  'cookieDomain' => 'example.com',
+  'cookiePath' => '/',
+  'cookieSecure' => false,
+  'cookieHttpOnly' => true,
 ]);
 ```
 
-> Default values mimic those provided by default PHP installation so the middleware can be used as a direct drop-in with automatic session timeout control 
+> Defaults extract default PHP installation session configurations so Session can be used as a direct drop-in with automatic session timeout control.
+ 
+#### Pre requisites
+
+Some session ini settings need to be set to specific values prior to start session, otherwise session will fail starting:
+
+* `session.use_trans_sid` to `false`
+* `session.use_cookies` to `true`
+* `session.use_only_cookies` to `true`
+* `session.use_strict_mode` to `false`
+* `session.cache_limiter` to `''` _(empty string)_
+
+> Prevents session headers to be automatically sent to user by PHP itself. **It's the developer's responsibility to include corresponding cache headers in response object**, which should be the case in the first place instead of relying on PHP environment settings.
 
 #### timeoutKey
 
@@ -160,9 +150,27 @@ There are six session lifetime constants available for convenience:
 * SESSION_LIFETIME_EXTENDED = 1 hour
 * SESSION_LIFETIME_INFINITE = `PHP_INT_MAX`, around 1145 years on x86_64 architecture
 
-#### path, domain, secure and httponly
+#### cookiePath, cookieDomain, cookieSecure and cookieHttpOnly
 
 Shortcuts to `session.cookie_path`, `session.cookie_domain`, `session.cookie_secure` and `session.cookie_httponly`. If not provided configured cookie params will be used, so can be set using `session_set_cookie_params()` before middleware run.
+
+### Session
+
+There is an extra Session helper to abstract access to the $_SESSION variable. This is usefull for example when NOT accessing global variables is important for you (such as when using PHP_MD to statically analise your code)
+
+When using this middleware **don't** make use of any PHP built-in session handling "session_*" function but leverage `\Jgut\Middleware\Sessionware\Session` corresponding methods:
+
+* `Session::start()` for session starting
+* `Session::isActive()` for verification of active session
+* `Session::getId()` for session id retrieval
+* `Session::regenerateId()` for cryptographically secure session id regeneration
+* `Session::close()` for closing session saving its contents
+* `Session::destroy()` for destroying session and all its contents
+* `Session::has($var)` for verifying a variable is saved in session
+* `Session::set($var, $val)` for saving a variable into session
+* `Session::get($var)` for getting a variable from session
+* `Session::remove($var)` for removing a variable from session
+* `Session::clear()` for emptying session variables
 
 ## Events
 

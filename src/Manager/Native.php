@@ -11,12 +11,12 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware\Manager;
+namespace Jgut\Sessionware\Manager;
 
-use Jgut\Middleware\Sessionware\Configuration;
-use Jgut\Middleware\Sessionware\Handler\Handler;
-use Jgut\Middleware\Sessionware\Handler\Native as NativeHandler;
-use Jgut\Middleware\Sessionware\Traits\NativeSessionTrait;
+use Jgut\Sessionware\Configuration;
+use Jgut\Sessionware\Handler\Handler;
+use Jgut\Sessionware\Handler\Native as NativeHandler;
+use Jgut\Sessionware\Traits\NativeSessionTrait;
 
 /**
  * Native PHP session manager.

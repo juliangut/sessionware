@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware\Manager;
+namespace Jgut\Sessionware\Manager;
 
 /**
  * Session manager interface.
@@ -21,7 +21,7 @@ interface Manager
     /**
      * Get session configuration.
      *
-     * @return \Jgut\Middleware\Sessionware\Configuration
+     * @return \Jgut\Sessionware\Configuration
      */
     public function getConfiguration();
 

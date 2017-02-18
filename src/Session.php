@@ -11,9 +11,9 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware;
+namespace Jgut\Sessionware;
 
-use Jgut\Middleware\Sessionware\Manager\Manager;
+use Jgut\Sessionware\Manager\Manager;
 use League\Event\EmitterAwareInterface;
 use League\Event\EmitterTrait;
 use League\Event\Event;
@@ -166,13 +166,37 @@ class Session implements EmitterAwareInterface
      * @param string $key
      * @param mixed  $value
      *
+     * @throws \InvalidArgumentException
+     *
      * @return static
      */
     public function set(string $key, $value) : self
     {
+        $this->verifyScalarValue($value);
+
         $this->data[$key] = $value;
 
         return $this;
+    }
+
+    /**
+     * Verify only scalar values allowed.
+     *
+     * @param string|int|float|bool|array $value
+     *
+     * @throws \InvalidArgumentException
+     */
+    final protected function verifyScalarValue($value)
+    {
+        if (is_array($value)) {
+            foreach ($value as $val) {
+                $this->verifyScalarValue($val);
+            }
+        }
+
+        if (!is_scalar($value)) {
+            throw new \InvalidArgumentException(sprintf('Session values must be scalars, %s given', gettype($value)));
+        }
     }
 
     /**
@@ -245,6 +269,66 @@ class Session implements EmitterAwareInterface
         }
 
         $this->setTimeout();
+    }
+
+    /**
+     * Get cookie header content.
+     *
+     * @return string
+     */
+    public function getCookieString() : string
+    {
+        $configuration = $this->getConfiguration();
+
+        $timeoutKey = $configuration->getTimeoutKey();
+        $expireTime = $this->has($timeoutKey)
+            ? $this->get($timeoutKey)
+            : time() - $configuration->getLifetime();
+
+        return sprintf(
+            '%s=%s; %s',
+            urlencode($configuration->getName()),
+            urlencode($this->getId()),
+            $this->getCookieParameters($expireTime)
+        );
+    }
+
+    /**
+     * Get session cookie parameters.
+     *
+     * @param int $expireTime
+     *
+     * @return string
+     */
+    protected function getCookieParameters(int $expireTime) : string
+    {
+        $configuration = $this->getConfiguration();
+
+        $cookieParams = [
+            sprintf(
+                'expires=%s; max-age=%s',
+                gmdate('D, d M Y H:i:s T', $expireTime),
+                $configuration->getLifetime()
+            ),
+        ];
+
+        if (!empty($configuration->getCookiePath())) {
+            $cookieParams[] = 'path=' . $configuration->getCookiePath();
+        }
+
+        if (!empty($configuration->getCookieDomain())) {
+            $cookieParams[] = 'domain=' . $configuration->getCookieDomain();
+        }
+
+        if ($configuration->isCookieSecure()) {
+            $cookieParams[] = 'secure';
+        }
+
+        if ($configuration->isCookieHttpOnly()) {
+            $cookieParams[] = 'httponly';
+        }
+
+        return implode('; ', $cookieParams);
     }
 
     /**

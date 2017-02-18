@@ -11,13 +11,14 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware\Tests;
+namespace Jgut\Sessionware\Tests\Middleware;
 
-use Jgut\Middleware\Sessionware\Configuration;
-use Jgut\Middleware\Sessionware\Handler\Memory;
-use Jgut\Middleware\Sessionware\Manager\Native;
-use Jgut\Middleware\Sessionware\Session;
-use Jgut\Middleware\Sessionware\Sessionware;
+use Jgut\Sessionware\Configuration;
+use Jgut\Sessionware\Handler\Memory;
+use Jgut\Sessionware\Manager\Native;
+use Jgut\Sessionware\Session;
+use Jgut\Sessionware\Middleware\SessionHandling;
+use Jgut\Sessionware\Tests\SessionTestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Zend\Diactoros\Response;
@@ -26,7 +27,7 @@ use Zend\Diactoros\ServerRequestFactory;
 /**
  * Session handling middleware test class.
  */
-class SessionwareTest extends SessionTestCase
+class SessionHandlingTest extends SessionTestCase
 {
     /**
      * @var Configuration
@@ -101,13 +102,13 @@ class SessionwareTest extends SessionTestCase
             ->expects(self::any())
             ->method('getConfiguration')
             ->will(self::returnValue($this->configuration));
-        /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
-        $middleware = new Sessionware($manager);
+        $middleware = new SessionHandling($manager);
 
         $assert = $this;
         $callback = function (ServerRequestInterface $request, ResponseInterface $response) use ($assert) {
-            $assert::assertInstanceOf(Session::class, Sessionware::getSession($request));
+            $assert::assertInstanceOf(Session::class, SessionHandling::getSession($request));
 
             return $response;
         };
@@ -124,7 +125,7 @@ class SessionwareTest extends SessionTestCase
     {
         $manager = new Native($this->configuration, new Memory());
 
-        $middleware = new Sessionware($manager);
+        $middleware = new SessionHandling($manager);
 
         $sessionId = 'ch3OZUQU3J93jqFRlbC7t5zzUrXq1m8AmBj87wdaUNZMzKHb9T5sYd8iZItWFR720NfoYmAztV3Izbpt';
         $request = ServerRequestFactory::fromGlobals(
@@ -133,19 +134,8 @@ class SessionwareTest extends SessionTestCase
             null,
             [$this->configuration->getName() => $sessionId]
         );
-        $assert = $this;
-        $callback = function (ServerRequestInterface $request, ResponseInterface $response) use ($assert, &$sessionId) {
-            $session = Sessionware::getSession($request);
-
-            $assert::assertInstanceOf(Session::class, $session);
-
-            $session->start();
-
-            $assert::assertEquals($sessionId, $session->getId());
-
-            $session->regenerateId();
-
-            $sessionId = $session->getId();
+        $callback = function (ServerRequestInterface $request, ResponseInterface $response) {
+            SessionHandling::getSession($request)->start();
 
             return $response;
         };

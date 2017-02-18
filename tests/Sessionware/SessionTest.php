@@ -11,11 +11,11 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware\Tests;
+namespace Jgut\Sessionware\Tests;
 
-use Jgut\Middleware\Sessionware\Configuration;
-use Jgut\Middleware\Sessionware\Manager\Native;
-use Jgut\Middleware\Sessionware\Session;
+use Jgut\Sessionware\Configuration;
+use Jgut\Sessionware\Manager\Native;
+use Jgut\Sessionware\Session;
 
 /**
  * PHP session helper test class.
@@ -40,7 +40,6 @@ class SessionTest extends SessionTestCase
         parent::setUp();
 
         $configuration = $this->getMockBuilder(Configuration::class)
-            ->disableOriginalConstructor()
             ->setMethods(['getName', 'getLifetime', 'getTimeoutKey'])
             ->getMock();
         $configuration
@@ -62,6 +61,28 @@ class SessionTest extends SessionTestCase
 
     /**
      * @runInSeparateProcess
+     *
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Session values must be scalars, object given
+     */
+    public function testInvalidSessionValue()
+    {
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('getConfiguration')
+            ->will(self::returnValue($this->configuration));
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
+
+        $session = new Session($manager);
+
+        $session->set('sessionKey', [new \stdClass()]);
+    }
+
+    /**
+     * @runInSeparateProcess
      */
     public function testSessionSettersGetters()
     {
@@ -72,7 +93,7 @@ class SessionTest extends SessionTestCase
             ->expects(self::any())
             ->method('getConfiguration')
             ->will(self::returnValue($this->configuration));
-        /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
         $session = new Session($manager);
 
@@ -118,7 +139,7 @@ class SessionTest extends SessionTestCase
             ->expects(self::any())
             ->method('getConfiguration')
             ->will(self::returnValue($this->configuration));
-        /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
         $session = new Session($manager);
 
@@ -158,7 +179,7 @@ class SessionTest extends SessionTestCase
             ->expects(self::any())
             ->method('getConfiguration')
             ->will(self::returnValue($this->configuration));
-        /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
         $session = new Session($manager);
 
@@ -183,7 +204,7 @@ class SessionTest extends SessionTestCase
             ->expects(self::any())
             ->method('isSessionStarted')
             ->will(self::returnValue(false));
-        /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
         $session = new Session($manager);
 
@@ -217,7 +238,7 @@ class SessionTest extends SessionTestCase
             ->expects(self::any())
             ->method('getConfiguration')
             ->will(self::returnValue($this->configuration));
-        /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
         $session = new Session($manager);
 
@@ -247,7 +268,7 @@ class SessionTest extends SessionTestCase
             ->expects(self::any())
             ->method('isSessionStarted')
             ->will(self::returnValue(false));
-        /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
         $session = new Session($manager);
 
@@ -277,7 +298,7 @@ class SessionTest extends SessionTestCase
             ->expects(self::any())
             ->method('getConfiguration')
             ->will(self::returnValue($this->configuration));
-        /* @var \Jgut\Middleware\Sessionware\Manager\Manager $manager */
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
         $session = new Session($manager);
 
@@ -288,5 +309,52 @@ class SessionTest extends SessionTestCase
         $session->destroy();
 
         self::assertFalse($session->has('saveKey'));
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testSessionCookieString()
+    {
+        $sessionId = 'ch3OZUQU3J93jqFRlbC7t5zzUrXq1m8AmBj87wdaUNZMzKHb9T5sYd8iZItWFR720NfoYmAztV3Izbpt';
+
+        $configuration = new Configuration(
+            [
+                'name' => 'Sessionware',
+                'lifetime' => Configuration::LIFETIME_FLASH,
+                'cookiePath' => '/home',
+                'cookieDomain' => 'example.com',
+                'cookieSecure' => true,
+                'cookieHttpOnly' => true,
+            ]
+        );
+
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('isSessionStarted')
+            ->will(self::onConsecutiveCalls(false, true, true));
+        $manager
+            ->expects(self::any())
+            ->method('getSessionId')
+            ->will(self::returnValue($sessionId));
+        $manager
+            ->expects(self::any())
+            ->method('getConfiguration')
+            ->will(self::returnValue($configuration));
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
+
+        $session = new Session($manager);
+
+        $cookieHeader = $session->getCookieString();
+
+        self::assertSame(strpos($cookieHeader, $configuration->getName() . '=' . $sessionId), 0);
+        self::assertNotSame(strpos($cookieHeader, 'max-age=' . $configuration->getLifetime()), false);
+        self::assertNotSame(strpos($cookieHeader, 'path=' . $configuration->getCookiePath()), false);
+        self::assertNotSame(strpos($cookieHeader, 'domain=' . $configuration->getCookieDomain()), false);
+        self::assertNotSame(strpos($cookieHeader, 'secure'), false);
+        self::assertNotSame(strpos($cookieHeader, 'httponly'), false);
     }
 }

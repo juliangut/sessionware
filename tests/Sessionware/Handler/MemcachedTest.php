@@ -11,10 +11,10 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware\Tests\Handler;
+namespace Jgut\Sessionware\Tests\Handler;
 
-use Jgut\Middleware\Sessionware\Configuration;
-use Jgut\Middleware\Sessionware\Handler\Memcached;
+use Jgut\Sessionware\Configuration;
+use Jgut\Sessionware\Handler\Memcached;
 
 /**
  * Memcached session handler test class.

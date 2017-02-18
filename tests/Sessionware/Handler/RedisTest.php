@@ -11,10 +11,10 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware\Tests\Handler;
+namespace Jgut\Sessionware\Tests\Handler;
 
-use Jgut\Middleware\Sessionware\Configuration;
-use Jgut\Middleware\Sessionware\Handler\Redis;
+use Jgut\Sessionware\Configuration;
+use Jgut\Sessionware\Handler\Redis;
 
 /**
  * Redis session handler test class.

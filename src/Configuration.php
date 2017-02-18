@@ -11,9 +11,9 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware;
+namespace Jgut\Sessionware;
 
-use Jgut\Middleware\Sessionware\Traits\NativeSessionTrait;
+use Jgut\Sessionware\Traits\NativeSessionTrait;
 
 /**
  * Session configuration.

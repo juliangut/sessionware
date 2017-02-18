@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware;
+namespace Jgut\Sessionware\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -37,7 +37,7 @@ class SessionStart
         ResponseInterface $response,
         callable $next
     ) : ResponseInterface {
-        Sessionware::getSession($request)->start();
+        SessionHandling::getSession($request)->start();
 
         return $next($request, $response);
     }

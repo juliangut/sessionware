@@ -11,12 +11,12 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware\Tests\Manager;
+namespace Jgut\Sessionware\Tests\Manager;
 
-use Jgut\Middleware\Sessionware\Configuration;
-use Jgut\Middleware\Sessionware\Handler\Memory;
-use Jgut\Middleware\Sessionware\Manager\Native;
-use Jgut\Middleware\Sessionware\Tests\SessionTestCase;
+use Jgut\Sessionware\Configuration;
+use Jgut\Sessionware\Handler\Memory;
+use Jgut\Sessionware\Manager\Native;
+use Jgut\Sessionware\Tests\SessionTestCase;
 
 /**
  * Native PHP session handler test class.
@@ -29,7 +29,7 @@ class NativeTest extends SessionTestCase
     protected $configuration;
 
     /**
-     * @var \Jgut\Middleware\Sessionware\Handler\Handler
+     * @var \Jgut\Sessionware\Handler\Handler
      */
     protected $handler;
 

@@ -11,16 +11,18 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware;
+namespace Jgut\Sessionware\Middleware;
 
-use Jgut\Middleware\Sessionware\Manager\Manager;
+use Jgut\Sessionware\Configuration;
+use Jgut\Sessionware\Manager\Manager;
+use Jgut\Sessionware\Session;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Session handling middleware.
  */
-class Sessionware
+class SessionHandling
 {
     const SESSION_KEY = '__SESSIONWARE_SESSION__';
 
@@ -102,69 +104,6 @@ class Sessionware
             return $response;
         }
 
-        $configuration = $this->getConfiguration();
-
-        $timeoutKey = $configuration->getTimeoutKey();
-        $expireTime = $this->session->has($timeoutKey)
-            ? $this->session->get($timeoutKey)
-            : time() - $configuration->getLifetime();
-
-        return $response->withAddedHeader(
-            'Set-Cookie',
-            sprintf(
-                '%s=%s; %s',
-                urlencode($configuration->getName()),
-                urlencode($this->session->getId()),
-                $this->getSessionCookieParameters($expireTime)
-            )
-        );
-    }
-
-    /**
-     * Get session cookie parameters.
-     *
-     * @param int $expireTime
-     *
-     * @return string
-     */
-    protected function getSessionCookieParameters(int $expireTime) : string
-    {
-        $configuration = $this->getConfiguration();
-
-        $cookieParams = [
-            sprintf(
-                'expires=%s; max-age=%s',
-                gmdate('D, d M Y H:i:s T', $expireTime),
-                $configuration->getLifetime()
-            ),
-        ];
-
-        if (!empty($configuration->getCookiePath())) {
-            $cookieParams[] = 'path=' . $configuration->getCookiePath();
-        }
-
-        if (!empty($configuration->getCookieDomain())) {
-            $cookieParams[] = 'domain=' . $configuration->getCookieDomain();
-        }
-
-        if ($configuration->isCookieSecure()) {
-            $cookieParams[] = 'secure';
-        }
-
-        if ($configuration->isCookieHttpOnly()) {
-            $cookieParams[] = 'httponly';
-        }
-
-        return implode('; ', $cookieParams);
-    }
-
-    /**
-     * Get session configuration.
-     *
-     * @return Configuration
-     */
-    protected function getConfiguration() : Configuration
-    {
-        return $this->sessionManager->getConfiguration();
+        return $response->withAddedHeader('Set-Cookie', $this->session->getCookieString());
     }
 }

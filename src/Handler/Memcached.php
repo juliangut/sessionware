@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware\Handler;
+namespace Jgut\Sessionware\Handler;
 
 /**
  * Memcached session handler.

@@ -11,11 +11,12 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware\Tests;
+namespace Jgut\Sessionware\Tests\Middleware;
 
-use Jgut\Middleware\Sessionware\Session;
-use Jgut\Middleware\Sessionware\SessionStart;
-use Jgut\Middleware\Sessionware\Sessionware;
+use Jgut\Sessionware\Session;
+use Jgut\Sessionware\Middleware\SessionStart;
+use Jgut\Sessionware\Middleware\SessionHandling;
+use Jgut\Sessionware\Tests\SessionTestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Zend\Diactoros\Response;
@@ -37,7 +38,7 @@ class SessionStartTest extends SessionTestCase
 
         $middleware = new SessionStart();
 
-        $request = (ServerRequestFactory::fromGlobals())->withAttribute(Sessionware::SESSION_KEY, $session);
+        $request = (ServerRequestFactory::fromGlobals())->withAttribute(SessionHandling::SESSION_KEY, $session);
         $callback = function (ServerRequestInterface $request, ResponseInterface $response) {
             return $response;
         };

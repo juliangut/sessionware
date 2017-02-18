@@ -11,10 +11,10 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware\Handler;
+namespace Jgut\Sessionware\Handler;
 
-use Jgut\Middleware\Sessionware\Configuration;
-use Jgut\Middleware\Sessionware\Traits\NativeSessionTrait;
+use Jgut\Sessionware\Configuration;
+use Jgut\Sessionware\Traits\NativeSessionTrait;
 
 /**
  * Native PHP session handler.

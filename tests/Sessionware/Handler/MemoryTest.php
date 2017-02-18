@@ -11,11 +11,11 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware\Tests\Handler;
+namespace Jgut\Sessionware\Tests\Handler;
 
-use Jgut\Middleware\Sessionware\Configuration;
-use Jgut\Middleware\Sessionware\Handler\Memory;
-use Jgut\Middleware\Sessionware\Tests\SessionTestCase;
+use Jgut\Sessionware\Configuration;
+use Jgut\Sessionware\Handler\Memory;
+use Jgut\Sessionware\Tests\SessionTestCase;
 
 /**
  * Void session handler test class.

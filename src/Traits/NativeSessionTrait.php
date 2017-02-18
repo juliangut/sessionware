@@ -9,7 +9,7 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
-namespace Jgut\Middleware\Sessionware\Traits;
+namespace Jgut\Sessionware\Traits;
 
 /**
  * Native session management trait.

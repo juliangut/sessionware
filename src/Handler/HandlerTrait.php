@@ -11,9 +11,9 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Middleware\Sessionware\Handler;
+namespace Jgut\Sessionware\Handler;
 
-use Jgut\Middleware\Sessionware\Configuration;
+use Jgut\Sessionware\Configuration;
 
 /**
  * Session handler utility trait.
