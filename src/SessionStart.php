@@ -9,6 +9,8 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
+declare(strict_types=1);
+
 namespace Jgut\Middleware\Sessionware;
 
 use Psr\Http\Message\ResponseInterface;
@@ -30,8 +32,11 @@ class SessionStart
      *
      * @return ResponseInterface
      */
-    public function __invoke(ServerRequestInterface $request, ResponseInterface $response, callable $next)
-    {
+    public function __invoke(
+        ServerRequestInterface $request,
+        ResponseInterface $response,
+        callable $next
+    ) : ResponseInterface {
         Sessionware::getSession($request)->start();
 
         return $next($request, $response);

@@ -24,7 +24,7 @@ trait NativeSessionTrait
      *
      * @return string
      */
-    protected function getStringIniSetting($setting, $default = '')
+    protected function getStringIniSetting(string $setting, string $default = '') : string
     {
         $setting = $this->getIniSetting($setting);
 
@@ -38,7 +38,7 @@ trait NativeSessionTrait
      *
      * @return int
      */
-    protected function getIntegerIniSetting($setting)
+    protected function getIntegerIniSetting(string $setting) : int
     {
         return (int) $this->getIniSetting($setting);
     }
@@ -50,7 +50,7 @@ trait NativeSessionTrait
      *
      * @return bool
      */
-    protected function hasBoolIniSetting($setting)
+    protected function hasBoolIniSetting(string $setting) : bool
     {
         return (bool) $this->getIniSetting($setting);
     }
@@ -62,7 +62,7 @@ trait NativeSessionTrait
      *
      * @return string
      */
-    protected function getIniSetting($setting)
+    protected function getIniSetting(string $setting) : string
     {
         return ini_get($this->normalizeSessionIniSetting($setting));
     }
@@ -73,7 +73,7 @@ trait NativeSessionTrait
      * @param string $setting
      * @param mixed  $value
      */
-    protected function setIniSetting($setting, $value)
+    protected function setIniSetting(string $setting, $value)
     {
         ini_set($this->normalizeSessionIniSetting($setting), $value);
     }
@@ -85,7 +85,7 @@ trait NativeSessionTrait
      *
      * @return string
      */
-    private function normalizeSessionIniSetting($setting)
+    private function normalizeSessionIniSetting(string $setting) : string
     {
         return strpos($setting, 'session.') !== 0 ? 'session.' . $setting : $setting;
     }

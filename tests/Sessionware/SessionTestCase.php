@@ -9,6 +9,8 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
+declare(strict_types=1);
+
 namespace Jgut\Middleware\Sessionware\Tests;
 
 use PHPUnit\Framework\TestCase;
@@ -23,14 +25,14 @@ abstract class SessionTestCase extends TestCase
      */
     public function setUp()
     {
-        ini_set('session.use_trans_sid', false);
-        ini_set('session.use_cookies', true);
-        ini_set('session.use_only_cookies', true);
-        ini_set('session.use_strict_mode', false);
+        ini_set('session.use_trans_sid', '0');
+        ini_set('session.use_cookies', '1');
+        ini_set('session.use_only_cookies', '1');
+        ini_set('session.use_strict_mode', '0');
         ini_set('session.cache_limiter', '');
 
-        ini_set('session.gc_probability', 1);
-        ini_set('session.gc_divisor', 2);
+        ini_set('session.gc_probability', '1');
+        ini_set('session.gc_divisor', '2');
 
         // Default PHP session length
         session_id(str_repeat('0', 32));

@@ -9,6 +9,8 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
+declare(strict_types=1);
+
 namespace Jgut\Middleware\Sessionware;
 
 use Jgut\Middleware\Sessionware\Traits\NativeSessionTrait;
@@ -93,7 +95,7 @@ class Configuration
      *
      * @return array
      */
-    protected function getDefaultSessionSettings()
+    protected function getDefaultSessionSettings() : array
     {
         $sessionLifetime = $this->getIntegerIniSetting('cookie_lifetime') === 0
             ? $this->getIntegerIniSetting('gc_maxlifetime')
@@ -144,7 +146,7 @@ class Configuration
      *
      * @return string
      */
-    public function getName()
+    public function getName() : string
     {
         return $this->name;
     }
@@ -158,7 +160,7 @@ class Configuration
      *
      * @return static
      */
-    public function setName($name)
+    public function setName(string $name)
     {
         if (trim($name) === '') {
             throw new \InvalidArgumentException('Session name must be a non empty string');
@@ -174,7 +176,7 @@ class Configuration
      *
      * @return string
      */
-    public function getCookiePath()
+    public function getCookiePath() : string
     {
         return $this->cookiePath;
     }
@@ -186,7 +188,7 @@ class Configuration
      *
      * @return static
      */
-    public function setCookiePath($cookiePath)
+    public function setCookiePath(string $cookiePath)
     {
         $this->cookiePath = $cookiePath;
 
@@ -198,7 +200,7 @@ class Configuration
      *
      * @return string
      */
-    public function getCookieDomain()
+    public function getCookieDomain() : string
     {
         return $this->cookieDomain;
     }
@@ -210,7 +212,7 @@ class Configuration
      *
      * @return static
      */
-    public function setCookieDomain($cookieDomain)
+    public function setCookieDomain(string $cookieDomain)
     {
         $this->cookieDomain = $cookieDomain;
 
@@ -222,7 +224,7 @@ class Configuration
      *
      * @return bool
      */
-    public function isCookieSecure()
+    public function isCookieSecure() : bool
     {
         return $this->cookieSecure;
     }
@@ -234,9 +236,9 @@ class Configuration
      *
      * @return static
      */
-    public function setCookieSecure($cookieSecure)
+    public function setCookieSecure(bool $cookieSecure)
     {
-        $this->cookieSecure = $cookieSecure === true;
+        $this->cookieSecure = $cookieSecure;
 
         return $this;
     }
@@ -246,7 +248,7 @@ class Configuration
      *
      * @return bool
      */
-    public function isCookieHttpOnly()
+    public function isCookieHttpOnly() : bool
     {
         return $this->cookieHttpOnly;
     }
@@ -258,7 +260,7 @@ class Configuration
      *
      * @return static
      */
-    public function setCookieHttpOnly($cookieHttpOnly)
+    public function setCookieHttpOnly(bool $cookieHttpOnly)
     {
         $this->cookieHttpOnly = $cookieHttpOnly;
 
@@ -270,7 +272,7 @@ class Configuration
      *
      * @return string
      */
-    public function getSavePath()
+    public function getSavePath() : string
     {
         return $this->savePath;
     }
@@ -284,7 +286,7 @@ class Configuration
      *
      * @return static
      */
-    public function setSavePath($savePath)
+    public function setSavePath(string $savePath)
     {
         if (trim($savePath) === '') {
             throw new \InvalidArgumentException('Session save path must be a non empty string');
@@ -300,7 +302,7 @@ class Configuration
      *
      * @return int
      */
-    public function getLifetime()
+    public function getLifetime() : int
     {
         return $this->lifetime;
     }
@@ -314,7 +316,7 @@ class Configuration
      *
      * @return static
      */
-    public function setLifetime($lifetime)
+    public function setLifetime(int $lifetime)
     {
         if ((int) $lifetime < 1) {
             throw new \InvalidArgumentException('Session lifetime must be a positive integer');
@@ -330,7 +332,7 @@ class Configuration
      *
      * @return string
      */
-    public function getTimeoutKey()
+    public function getTimeoutKey() : string
     {
         return $this->timeoutKey;
     }
@@ -344,7 +346,7 @@ class Configuration
      *
      * @return static
      */
-    public function setTimeoutKey($timeoutKey)
+    public function setTimeoutKey(string $timeoutKey)
     {
         if (trim($timeoutKey) === '') {
             throw new \InvalidArgumentException('Session timeout key must be a non empty string');

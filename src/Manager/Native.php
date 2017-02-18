@@ -9,6 +9,8 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
+declare(strict_types=1);
+
 namespace Jgut\Middleware\Sessionware\Manager;
 
 use Jgut\Middleware\Sessionware\Configuration;
@@ -27,6 +29,13 @@ class Native implements Manager
      * @var Configuration
      */
     protected $configuration;
+
+    /**
+     * Session handler.
+     *
+     * @var Handler
+     */
+    protected $sessionHandler;
 
     /**
      * @var string
@@ -54,23 +63,20 @@ class Native implements Manager
             // @codeCoverageIgnoreEnd
         }
 
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            throw new \RuntimeException('Session has already been started. Check "session.auto_start" ini setting');
-        }
-
-        $this->verifyIniSettings();
-
         $this->configuration = $configuration;
 
-        $this->configureSessionSerializer();
-        $this->configureSessionGarbageCollector();
-        $this->configureSessionSaveHandler($sessionHandler);
+        if ($sessionHandler === null) {
+            $sessionHandler = new NativeHandler();
+        }
+        $sessionHandler->setConfiguration($configuration);
+
+        $this->sessionHandler = $sessionHandler;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getConfiguration()
+    public function getConfiguration() : Configuration
     {
         return $this->configuration;
     }
@@ -78,9 +84,9 @@ class Native implements Manager
     /**
      * {@inheritdoc}
      */
-    public function getSessionId()
+    public function getSessionId() : string
     {
-        return $this->sessionStarted ? $this->sessionId : null;
+        return $this->sessionStarted ? $this->sessionId : '';
     }
 
     /**
@@ -88,7 +94,7 @@ class Native implements Manager
      *
      * @throws \RuntimeException
      */
-    public function setSessionId($sessionId)
+    public function setSessionId(string $sessionId)
     {
         if ($this->sessionStarted) {
             throw new \RuntimeException('Session identifier cannot be manually altered once session is started');
@@ -106,8 +112,10 @@ class Native implements Manager
      *
      * @return array|null
      */
-    public function sessionStart()
+    public function sessionStart() : array
     {
+        $this->verifyIniSettings();
+
         if ($this->sessionStarted || session_status() === PHP_SESSION_ACTIVE) {
             throw new \RuntimeException('Session has already been started. Check "session.auto_start" ini setting');
         }
@@ -122,11 +130,30 @@ class Native implements Manager
             );
         }
 
-        $this->sessionInitialize();
+        $this->configureSession();
+        $this->initializeSession();
 
         $this->sessionStarted = true;
 
-        return $this->sessionLoadData();
+        return $this->loadSessionData();
+    }
+
+    /**
+     * Configure session settings.
+     */
+    protected function configureSession()
+    {
+        // Use better session serializer when available
+        if ($this->getIniSetting('serialize_handler') !== 'php_serialize') {
+            // @codeCoverageIgnoreStart
+            $this->setIniSetting('serialize_handler', 'php_serialize');
+            // @codeCoverageIgnoreEnd
+        }
+
+        $this->setIniSetting('gc_maxlifetime', $this->configuration->getLifetime());
+
+        session_register_shutdown();
+        session_set_save_handler($this->sessionHandler, false);
     }
 
     /**
@@ -134,7 +161,7 @@ class Native implements Manager
      *
      * @throws \RuntimeException
      */
-    final protected function sessionInitialize()
+    final protected function initializeSession()
     {
         if ($this->sessionId) {
             session_id($this->sessionId);
@@ -162,7 +189,7 @@ class Native implements Manager
      *
      * @SuppressWarnings(PHPMD.Superglobals)
      */
-    final protected function sessionLoadData()
+    final protected function loadSessionData()
     {
         $keyPattern = '/^' . $this->configuration->getName() . '\./';
         $data = [];
@@ -270,7 +297,7 @@ class Native implements Manager
     /**
      * {@inheritdoc}
      */
-    public function isSessionStarted()
+    public function isSessionStarted() : bool
     {
         return $this->sessionStarted;
     }
@@ -278,7 +305,7 @@ class Native implements Manager
     /**
      * {@inheritdoc}
      */
-    public function shouldRegenerateId()
+    public function shouldRegenerateId() : bool
     {
         return strlen($this->sessionId) !== Configuration::SESSION_ID_LENGTH;
     }
@@ -309,44 +336,6 @@ class Native implements Manager
         if ($this->getStringIniSetting('cache_limiter') !== '') {
             throw new \RuntimeException('"session.cache_limiter" ini setting must be set to empty string');
         }
-    }
-
-    /**
-     * Configure session data serializer.
-     */
-    protected function configureSessionSerializer()
-    {
-        // Use better session serializer when available
-        if ($this->getIniSetting('serialize_handler') !== 'php_serialize') {
-            // @codeCoverageIgnoreStart
-            $this->setIniSetting('serialize_handler', 'php_serialize');
-            // @codeCoverageIgnoreEnd
-        }
-    }
-
-    /**
-     * Configure session timeout.
-     */
-    protected function configureSessionGarbageCollector()
-    {
-        $this->setIniSetting('gc_maxlifetime', $this->configuration->getLifetime());
-    }
-
-    /**
-     * Configure session save handler.
-     *
-     * @param Handler|null $sessionHandler
-     */
-    protected function configureSessionSaveHandler(Handler $sessionHandler = null)
-    {
-        if ($sessionHandler === null) {
-            $sessionHandler = new NativeHandler();
-        }
-
-        $sessionHandler->setConfiguration($this->configuration);
-
-        session_register_shutdown();
-        session_set_save_handler($sessionHandler, false);
     }
 
     /**

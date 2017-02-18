@@ -1,6 +1,6 @@
 {
   "name": "juliangut/sessionware",
-  "description": "PSR7 session management middleware",
+  "description": "PSR7 session management",
   "keywords": [
     "psr7",
     "session",
@@ -23,16 +23,16 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "php": ">=5.6",
+    "php": ">=7.0",
     "league/event": "^2.1",
-    "psr/http-message": "^1.0",
-    "symfony/polyfill-php70": "^1.0"
+    "psr/http-message": "^1.0"
   },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^1.12",
     "humbug/humbug": "~1.0@dev",
     "phpmd/phpmd": "^2.0",
     "phpunit/phpunit": "^5.7|6.0",
+    "phpstan/phpstan": "~0.5",
     "sebastian/phpcpd": "^2.0",
     "squizlabs/php_codesniffer": "^2.0",
     "zendframework/zend-diactoros": "^1.3"
@@ -60,6 +60,7 @@
     "phpcs": "phpcs --standard=PSR2 src tests",
     "phpcs-lint": "php-cs-fixer fix --dry-run --verbose",
     "phpcpd": "phpcpd src",
+    "phpstan": "phpstan analyse --level 1 src tests",
     "phpmd": "phpmd src text unusedcode,naming,design,controversial,codesize",
     "phpunit": "phpunit",
     "phpunit-coverage": "phpunit --coverage-html build/coverage",
@@ -70,6 +71,7 @@
       "@phpcs",
       "@phpcs-lint",
       "@phpcpd",
+      "@phpstan",
       "@phpmd"
     ],
     "fix": "php-cs-fixer fix --verbose",

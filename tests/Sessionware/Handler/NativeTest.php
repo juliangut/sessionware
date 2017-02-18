@@ -9,6 +9,8 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
+declare(strict_types=1);
+
 namespace Jgut\Middleware\Sessionware\Tests\Handler;
 
 use Jgut\Middleware\Sessionware\Configuration;
@@ -36,8 +38,8 @@ class NativeTest extends SessionTestCase
 
         parent::setUp();
 
-        ini_set('session.gc_probability', 1);
-        ini_set('session.gc_divisor', 1);
+        ini_set('session.gc_probability', '1');
+        ini_set('session.gc_divisor', '1');
 
         $this->handler = new Native();
     }

@@ -9,6 +9,8 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
+declare(strict_types=1);
+
 namespace Jgut\Middleware\Sessionware\Tests;
 
 use Jgut\Middleware\Sessionware\Configuration;
@@ -50,12 +52,12 @@ class ConfigurationTest extends TestCase
 
         session_name($configs['name']);
         session_save_path($configs['savePath']);
-        ini_set('session.gc_maxlifetime', Configuration::LIFETIME_SHORT);
-        ini_set('session.cookie_lifetime', 0);
+        ini_set('session.gc_maxlifetime', (string) Configuration::LIFETIME_SHORT);
+        ini_set('session.cookie_lifetime', '0');
         ini_set('session.cookie_path', $configs['cookiePath']);
         ini_set('session.cookie_domain', $configs['cookieDomain']);
-        ini_set('session.cookie_secure', $configs['cookieSecure']);
-        ini_set('session.cookie_httponly', $configs['cookieHttpOnly']);
+        ini_set('session.cookie_secure', (string) $configs['cookieSecure']);
+        ini_set('session.cookie_httponly', (string) $configs['cookieHttpOnly']);
 
         $configuration = new Configuration();
 

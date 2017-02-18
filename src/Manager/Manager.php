@@ -9,6 +9,8 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
+declare(strict_types=1);
+
 namespace Jgut\Middleware\Sessionware\Manager;
 
 /**
@@ -26,23 +28,23 @@ interface Manager
     /**
      * Get session identifier.
      *
-     * @return string|null
+     * @return string
      */
-    public function getSessionId();
+    public function getSessionId() : string;
 
     /**
      * @param string $sessionId
      *
      * @return self
      */
-    public function setSessionId($sessionId);
+    public function setSessionId(string $sessionId);
 
     /**
      * Start session.
      *
      * @return array
      */
-    public function sessionStart();
+    public function sessionStart() : array;
 
     /**
      * Save session data and end session.
@@ -66,12 +68,12 @@ interface Manager
      *
      * @return bool
      */
-    public function isSessionStarted();
+    public function isSessionStarted() : bool;
 
     /**
      * Should session identifier be regenerated.
      *
      * @return bool
      */
-    public function shouldRegenerateId();
+    public function shouldRegenerateId() : bool;
 }

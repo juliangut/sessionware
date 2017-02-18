@@ -9,6 +9,8 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
+declare(strict_types=1);
+
 namespace Jgut\Middleware\Sessionware\Tests\Manager;
 
 use Jgut\Middleware\Sessionware\Configuration;
@@ -59,93 +61,50 @@ class NativeTest extends SessionTestCase
         $this->handler = new Memory();
     }
 
-    /**
-     * @runInSeparateProcess
-     *
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage Session has already been started. Check "session.auto_start" ini setting
-     */
-    public function testSessionAlreadyActive()
-    {
-        session_start();
-
-        new Native($this->configuration);
-    }
-
-    /**
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage "session.use_trans_sid" ini setting must be set to false
-     */
-    public function testInvalidSessionUseTransSid()
-    {
-        ini_set('session.use_trans_sid', true);
-
-        new Native($this->configuration);
-    }
-
-    /**
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage "session.use_cookies" ini setting must be set to true
-     */
-    public function testInvalidSessionUseCookies()
-    {
-        ini_set('session.use_cookies', false);
-
-        new Native($this->configuration);
-    }
-
-    /**
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage "session.use_only_cookies" ini setting must be set to true
-     */
-    public function testInvalidSessionUseOnlyCookies()
-    {
-        ini_set('session.use_only_cookies', false);
-
-        new Native($this->configuration);
-    }
-
-    /**
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage "session.use_strict_mode" ini setting must be set to false
-     */
-    public function testInvalidSessionUseStrictMode()
-    {
-        ini_set('session.use_strict_mode', true);
-
-        new Native($this->configuration);
-    }
-
-    /**
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage "session.cache_limiter" ini setting must be set to empty string
-     */
-    public function testInvalidSessionCacheLimiter()
-    {
-        ini_set('session.cache_limiter', 'nocache');
-
-        new Native($this->configuration);
-    }
-
-    public function testCreation()
-    {
-        new Native($this->configuration);
-
-        self::assertEquals('php_serialize', ini_get('session.serialize_handler'));
-        self::assertEquals($this->configuration->getLifetime(), ini_get('session.gc_maxlifetime'));
-        self::assertEquals('user', ini_get('session.save_handler'));
-    }
-
     public function testGettersSetters()
     {
         $manager = new Native($this->configuration, $this->handler);
 
         self::assertFalse($manager->isSessionStarted());
         self::assertSame($this->configuration, $manager->getConfiguration());
-        self::assertNull($manager->getSessionId());
+        self::assertEmpty($manager->getSessionId());
 
         $manager->setSessionId('00000000000000000000000000000000');
-        self::assertNull($manager->getSessionId());
+        self::assertEmpty($manager->getSessionId());
+    }
+
+    /**
+     * @param string $setting
+     * @param string $value
+     *
+     * @runInSeparateProcess
+     * @dataProvider invalidIniSettingsProvider
+     *
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessageRegExp /^"session\..+" ini setting must be set to .+/
+     */
+    public function testInvalidIniSettings(string $setting, string $value)
+    {
+        ini_set($setting, $value);
+
+        $manager = new Native($this->configuration);
+        $manager->sessionStart();
+    }
+
+    /**
+     * Provide invalid ini settings.
+     *
+     * @return array
+     */
+    public function invalidIniSettingsProvider() : array
+    {
+        return [
+            ['session.use_trans_sid', '1'],
+            ['session.use_cookies', '0'],
+            ['session.use_only_cookies', '0'],
+            ['session.use_strict_mode', '1'],
+            ['session.cache_limiter', 'nocache'],
+        ];
     }
 
     /**
@@ -214,6 +173,9 @@ class NativeTest extends SessionTestCase
 
         $manager->sessionStart();
 
+        self::assertEquals('php_serialize', ini_get('session.serialize_handler'));
+        self::assertSame($this->configuration->getLifetime(), (int) ini_get('session.gc_maxlifetime'));
+        self::assertEquals('user', ini_get('session.save_handler'));
         self::assertTrue($manager->isSessionStarted());
 
         self::assertEquals($this->configuration->getName(), session_name());

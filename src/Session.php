@@ -9,6 +9,8 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
+declare(strict_types=1);
+
 namespace Jgut\Middleware\Sessionware;
 
 use Jgut\Middleware\Sessionware\Manager\Manager;
@@ -24,6 +26,8 @@ class Session implements EmitterAwareInterface
     use EmitterTrait;
 
     /**
+     * Session manager.
+     *
      * @var Manager
      */
     protected $sessionManager;
@@ -116,7 +120,7 @@ class Session implements EmitterAwareInterface
      *
      * @return bool
      */
-    public function isActive()
+    public function isActive() : bool
     {
         return $this->sessionManager->isSessionStarted();
     }
@@ -124,9 +128,9 @@ class Session implements EmitterAwareInterface
     /**
      * Get session identifier.
      *
-     * @return string|null
+     * @return string
      */
-    public function getId()
+    public function getId() : string
     {
         return $this->sessionManager->getSessionId();
     }
@@ -138,7 +142,7 @@ class Session implements EmitterAwareInterface
      *
      * @return bool
      */
-    public function has($key)
+    public function has(string $key) : bool
     {
         return array_key_exists($key, $this->data);
     }
@@ -151,7 +155,7 @@ class Session implements EmitterAwareInterface
      *
      * @return mixed
      */
-    public function get($key, $default = null)
+    public function get(string $key, $default = null)
     {
         return array_key_exists($key, $this->data) ? $this->data[$key] : $default;
     }
@@ -164,7 +168,7 @@ class Session implements EmitterAwareInterface
      *
      * @return static
      */
-    public function set($key, $value)
+    public function set(string $key, $value) : self
     {
         $this->data[$key] = $value;
 
@@ -178,7 +182,7 @@ class Session implements EmitterAwareInterface
      *
      * @return static
      */
-    public function remove($key)
+    public function remove(string $key) : self
     {
         if (array_key_exists($key, $this->data)) {
             unset($this->data[$key]);
@@ -206,17 +210,21 @@ class Session implements EmitterAwareInterface
      *
      * @return int
      */
-    public function getTimeout()
+    public function getTimeout() : int
     {
         return $this->data[$this->getConfiguration()->getTimeoutKey()];
     }
 
     /**
      * Set session timeout time.
+     *
+     * @return static
      */
-    protected function setTimeout()
+    protected function setTimeout() : self
     {
         $this->data[$this->getConfiguration()->getTimeoutKey()] = time() + $this->getConfiguration()->getLifetime();
+
+        return $this;
     }
 
     /**
@@ -244,7 +252,7 @@ class Session implements EmitterAwareInterface
      *
      * @return Configuration
      */
-    protected function getConfiguration()
+    protected function getConfiguration() : Configuration
     {
         return $this->sessionManager->getConfiguration();
     }

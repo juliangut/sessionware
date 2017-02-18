@@ -9,6 +9,8 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
+declare(strict_types=1);
+
 namespace Jgut\Middleware\Sessionware;
 
 use Jgut\Middleware\Sessionware\Manager\Manager;
@@ -49,7 +51,7 @@ class Sessionware
      *
      * @return Session
      */
-    public static function getSession(ServerRequestInterface $request)
+    public static function getSession(ServerRequestInterface $request) : Session
     {
         return $request->getAttribute(static::SESSION_KEY);
     }
@@ -65,8 +67,11 @@ class Sessionware
      *
      * @return ResponseInterface
      */
-    public function __invoke(ServerRequestInterface $request, ResponseInterface $response, callable $next)
-    {
+    public function __invoke(
+        ServerRequestInterface $request,
+        ResponseInterface $response,
+        callable $next
+    ) :ResponseInterface {
         $requestCookies = $request->getCookieParams();
         $sessionName = $this->sessionManager->getConfiguration()->getName();
         if (array_key_exists($sessionName, $requestCookies) && !empty($requestCookies[$sessionName])) {
@@ -91,7 +96,7 @@ class Sessionware
      *
      * @return ResponseInterface
      */
-    protected function respondWithSessionCookie(ResponseInterface $response)
+    protected function respondWithSessionCookie(ResponseInterface $response) : ResponseInterface
     {
         if (!$this->session->isActive()) {
             return $response;
@@ -122,7 +127,7 @@ class Sessionware
      *
      * @return string
      */
-    protected function getSessionCookieParameters($expireTime)
+    protected function getSessionCookieParameters(int $expireTime) : string
     {
         $configuration = $this->getConfiguration();
 
@@ -158,7 +163,7 @@ class Sessionware
      *
      * @return Configuration
      */
-    protected function getConfiguration()
+    protected function getConfiguration() : Configuration
     {
         return $this->sessionManager->getConfiguration();
     }

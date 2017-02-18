@@ -1,4 +1,4 @@
-[![PHP version](https://img.shields.io/badge/PHP-%3E%3D5.6-8892BF.svg?style=flat-square)](http://php.net)
+[![PHP version](https://img.shields.io/badge/PHP-%3E%3D7.0-8892BF.svg?style=flat-square)](http://php.net)
 [![Latest Version](https://img.shields.io/packagist/vpre/juliangut/sessionware.svg?style=flat-square)](https://packagist.org/packages/juliangut/sessionware)
 [![License](https://img.shields.io/github/license/juliangut/sessionware.svg?style=flat-square)](https://github.com//sessionware/blob/master/LICENSE)
 
@@ -12,31 +12,35 @@
 
 # SessionWare
 
-A PSR7 session management middleware.
-
-Automatic control of session timeout.
+A PSR7 session management.
 
 Generates a 80 character long session_id using `random_bytes`, a truly cryptographically secure pseudo-random generator, instead of `session.hash_function` hash algorithm.
 
 #### Important considerations
 
-Be aware that this middleware needs some session `ini` settings to be set to specific values:
+Be aware that this middleware needs some session ini settings to be set to specific values:
 
-`session.use_trans_sid` to `false`
-`session.use_cookies` to `true`
-`session.use_only_cookies` to `true`
-`session.use_strict_mode` to `false`
-`session.cache_limiter` to '' (empty string)
+* `session.use_trans_sid` to `false`
+* `session.use_cookies` to `true`
+* `session.use_only_cookies` to `true`
+* `session.use_strict_mode` to `false`
+* `session.cache_limiter` to `''` (empty string)
 
 This values will prevent session headers to be automatically sent to user. **It's the developer's responsibility to include corresponding cache headers in response object**, which should be the case in the first place instead of relying on PHP environment settings.
 
-> You can use [juliangut/cacheware](https://github.com/juliangut/cacheware) which will automatically set the corrent session ini settings and add the corresponding cache headers to response object.
+When using this middleware don't make use of any PHP native session handling "session_*" function but leverage `\Jgut\Middleware\Sessionware\Session` corresponding methods:
 
-By using `session_regenerate_id()` during execution cryptographically secure session ID will be replaced by default PHP `session.hash_function` generated ID (not really secure). To prevent this from happening use `\Jgut\Middleware\Session` helper method `regenerateSessionId()` instead:
-
-```php
-\Jgut\Middleware\Session::regenerateSessionId();
-```
+* `Session::start()` for session starting
+* `Session::isActive()` for verification of active session
+* `Session::getId()` for session id retrieval
+* `Session::regenerateId()` for cryptographically secure session id regeneration
+* `Session::close()` for closing session saving its contents
+* `Session::destroy()` for destroying session and all its contents
+* `Session::has($var)` for verifying a variable is saved in session
+* `Session::set($var, $val)` for saving a variable into session
+* `Session::get($var)` for getting a variable from session
+* `Session::remove($var)` for removing a variable from session
+* `Session::clear()` for emptying session variables
 
 ## Installation
 
