@@ -2,7 +2,7 @@
 
 /*
  * sessionware (https://github.com/juliangut/sessionware).
- * PSR7 session management middleware.
+ * PSR7 compatible session management.
  *
  * @license BSD-3-Clause
  * @link https://github.com/juliangut/sessionware
@@ -164,7 +164,7 @@ class Configuration
      *
      * @throws \InvalidArgumentException
      *
-     * @return static
+     * @return self
      */
     public function setName(string $name)
     {
@@ -192,7 +192,7 @@ class Configuration
      *
      * @param string $cookiePath
      *
-     * @return static
+     * @return self
      */
     public function setCookiePath(string $cookiePath)
     {
@@ -216,7 +216,7 @@ class Configuration
      *
      * @param string $cookieDomain
      *
-     * @return static
+     * @return self
      */
     public function setCookieDomain(string $cookieDomain)
     {
@@ -240,7 +240,7 @@ class Configuration
      *
      * @param bool $cookieSecure
      *
-     * @return static
+     * @return self
      */
     public function setCookieSecure(bool $cookieSecure)
     {
@@ -264,7 +264,7 @@ class Configuration
      *
      * @param bool $cookieHttpOnly
      *
-     * @return static
+     * @return self
      */
     public function setCookieHttpOnly(bool $cookieHttpOnly)
     {
@@ -290,7 +290,7 @@ class Configuration
      *
      * @throws \InvalidArgumentException
      *
-     * @return static
+     * @return self
      */
     public function setSavePath(string $savePath)
     {
@@ -320,7 +320,7 @@ class Configuration
      *
      * @throws \InvalidArgumentException
      *
-     * @return static
+     * @return self
      */
     public function setLifetime(int $lifetime)
     {
@@ -350,7 +350,7 @@ class Configuration
      *
      * @throws \InvalidArgumentException
      *
-     * @return static
+     * @return self
      */
     public function setEncryptionKey(string $encryptionKey) : self
     {
@@ -380,7 +380,7 @@ class Configuration
      *
      * @throws \InvalidArgumentException
      *
-     * @return static
+     * @return self
      */
     public function setTimeoutKey(string $timeoutKey)
     {

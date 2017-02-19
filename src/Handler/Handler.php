@@ -2,7 +2,7 @@
 
 /*
  * sessionware (https://github.com/juliangut/sessionware).
- * PSR7 session management middleware.
+ * PSR7 compatible session management.
  *
  * @license BSD-3-Clause
  * @link https://github.com/juliangut/sessionware
@@ -25,7 +25,7 @@ interface Handler extends \SessionHandlerInterface
      *
      * @param Configuration $configuration
      *
-     * @return static
+     * @return self
      */
     public function setConfiguration(Configuration $configuration);
 }

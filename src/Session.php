@@ -2,7 +2,7 @@
 
 /*
  * sessionware (https://github.com/juliangut/sessionware).
- * PSR7 session management middleware.
+ * PSR7 compatible session management.
  *
  * @license BSD-3-Clause
  * @link https://github.com/juliangut/sessionware
@@ -221,7 +221,7 @@ class Session implements EmitterAwareInterface
      *
      * @throws \InvalidArgumentException
      *
-     * @return static
+     * @return self
      */
     public function set(string $key, $value) : self
     {
@@ -257,7 +257,7 @@ class Session implements EmitterAwareInterface
      *
      * @param string $key
      *
-     * @return static
+     * @return self
      */
     public function remove(string $key) : self
     {
@@ -271,7 +271,7 @@ class Session implements EmitterAwareInterface
     /**
      * Remove all session parameters.
      *
-     * @return static
+     * @return self
      */
     public function clear() : self
     {
