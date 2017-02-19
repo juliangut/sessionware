@@ -95,12 +95,12 @@ class SessionTest extends SessionTestCase
             ->will(self::returnValue($this->configuration));
         /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
-        $session = new Session($manager);
+        $timeout = time() + Configuration::LIFETIME_FLASH;
+        $session = new Session($manager, [$this->configuration->getTimeoutKey() => $timeout]);
 
-        self::assertFalse($session->has('sessionKey'));
+        self::assertTrue($session->has($this->configuration->getTimeoutKey()));
 
         $session->set('sessionKeyOne', 'sessionValueOne');
-        $session->set('sessionKeyTwo', 'sessionValueTwo');
         self::assertTrue($session->has('sessionKeyOne'));
         self::assertEquals('sessionValueOne', $session->get('sessionKeyOne'));
 
@@ -108,8 +108,12 @@ class SessionTest extends SessionTestCase
         self::assertFalse($session->has('sessionKeyOne'));
         self::assertEquals('noValue', $session->get('sessionKeyOne', 'noValue'));
 
+        $session->set('sessionKeyTwo', 'sessionValueTwo');
+
         $session->clear();
         self::assertFalse($session->has('sessionKeyTwo'));
+        self::assertTrue($session->has($this->configuration->getTimeoutKey()));
+        self::assertEquals($timeout, $session->get($this->configuration->getTimeoutKey()));
     }
 
     /**
@@ -141,7 +145,8 @@ class SessionTest extends SessionTestCase
             ->will(self::returnValue($this->configuration));
         /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
-        $session = new Session($manager);
+        $timeout = time() + Configuration::LIFETIME_FLASH;
+        $session = new Session($manager, [$this->configuration->getTimeoutKey() => $timeout]);
 
         self::assertFalse($session->isActive());
         self::assertFalse($session->isDestroyed());
@@ -149,7 +154,42 @@ class SessionTest extends SessionTestCase
         $session->start();
         $session->start();
 
-        self::assertTrue($session->has(Configuration::TIMEOUT_KEY_DEFAULT));
+        self::assertTrue($session->has($this->configuration->getTimeoutKey()));
+        self::assertNotEquals($timeout, $session->get($this->configuration->getTimeoutKey()));
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testSessionTimeout()
+    {
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('isSessionStarted')
+            ->will(self::onConsecutiveCalls(false, false, true, true));
+        $manager
+            ->expects(self::once())
+            ->method('sessionStart')
+            ->will(self::returnValue([]));
+        $manager
+            ->expects(self::any())
+            ->method('shouldRegenerateId')
+            ->will(self::returnValue(false));
+        $manager
+            ->expects(self::once())
+            ->method('sessionRegenerateId');
+        $manager
+            ->expects(self::any())
+            ->method('getConfiguration')
+            ->will(self::returnValue($this->configuration));
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
+
+        $session = new Session($manager, [$this->configuration->getTimeoutKey() => time() - 3600]);
+
+        $session->start();
     }
 
     /**

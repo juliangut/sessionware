@@ -43,10 +43,15 @@ class Session implements EmitterAwareInterface
      * Session constructor.
      *
      * @param Manager $sessionManager
+     * @param array   $initialData
      */
-    public function __construct(Manager $sessionManager)
+    public function __construct(Manager $sessionManager, array $initialData = [])
     {
         $this->sessionManager = $sessionManager;
+
+        foreach ($initialData as $key => $value) {
+            $this->set($key, $value);
+        }
     }
 
     /**
@@ -72,7 +77,7 @@ class Session implements EmitterAwareInterface
 
         $this->emit(Event::named('pre.session_start'), $this);
 
-        $this->data = $this->sessionManager->sessionStart();
+        $this->data = array_merge($this->data, $this->sessionManager->sessionStart());
 
         if ($this->sessionManager->shouldRegenerateId()) {
             $this->regenerateId();

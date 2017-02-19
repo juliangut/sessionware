@@ -102,17 +102,17 @@ $configuration = new Configuration([
 
 #### name
 
-Assigns session name, default PHP `PHPSESSID` session name will be used if none provided. **It is highly recommended to set a custom session name**
+Assigns session name, default PHP `PHPSESSID` session name will be used if none provided. **It is highly recommended to set a custom session name in every case**
 
 > If using PHP's built-in 'files' session save handler you **MUST** provide a custom session name.
 
 #### savePath
 
-Native handler specific configuration, used if default 'files' session save handler is specified in `session.save_handler`. It defaults to `session.save_path` ini setting or `sys_get_temp_dir()` if empty.
+Native handler specific configuration, used if default 'files' session save handler is specified in `session.save_handler` ini setting. It defaults to `session.save_path` ini setting or `sys_get_temp_dir()` if empty.
 
-Final session save path will be determined by joining this parameter with session name (other than default `PHPSESSID`). This is done so that session files for current script gets separated, from other script's, into its own directory.
+Resulting "session save path" will be determined by joining this parameter with session name (other than default `PHPSESSID`). This is done so that session files for current script gets separated from other script's into its own directory.
 
-Session garbage collector uses file access time to determine and remove expired session files. If files from sessions with different lifetime are located in the same directory they could be removed by other script/application as there is no way for the garbage collector to tell which script/application they belong to.
+'files' handler garbage collector uses file access time to determine and remove expired session files. If files from sessions with different lifetime are located in the same directory they could be removed by other script/application as there is no way for the garbage collector to tell which script/application they belong to.
 
 #### lifetime
 
@@ -129,16 +129,30 @@ There are six session lifetime constants available for convenience:
 
 #### timeoutKey
 
-Parameter stored in session array to control session validity according to `lifetime` parameter. Defaults to 
-```
-\Jgut\Sessionware::SESSION_TIMEOUT_KEY_DEFAULT = '__SESSIONWARE_TIMEOUT_TIMESTAMP__';
-```
+Parameter stored in session array to control session validity according to `lifetime` parameter. Defaults to `
+\Jgut\Sessionware\Configuration::TIMEOUT_KEY_DEFAULT`
 
 _It is advised not to change this value unless it conflicts with one of your own session keys (which is unlikely if not directly impossible)_
 
 #### cookiePath, cookieDomain, cookieSecure and cookieHttpOnly
 
 Configure session cookie parameters. Defaults to PHP session cookie `session.cookie_path`, `session.cookie_domain`, `session.cookie_secure` and `session.cookie_httponly` respectively  if not provided.
+
+### Handler
+
+Handlers are only used with Native manager and are a replacement for `session.save_handler` ini setting. It allows for the selection of several ways of persisting session data:
+
+* `\Jgut\Sessionware\Handler\Native` use PHP built-in `files` session saving
+* `\Jgut\Sessionware\Handler\Memory` an in-memory session for testing purposes
+* `\Jgut\Sessionware\Handler\Memcached` use a memcached service to save session
+* `\Jgut\Sessionware\Handler\Redis` use a Redis instance to store session
+
+```php
+$memcached = new \Memcached();
+$memcached->addServer('127.0.0.1', 11211);
+
+$handler = new \Jgut\Sessionware\Handler\Memcached($memcached));
+```
 
 ### Manager
 
@@ -148,7 +162,7 @@ Currently only `Native` manager exist that uses built-in PHP session capabilitie
 
 #### Requisites
 
-Some session ini settings need to be set to specific values prior to start session, otherwise session will fail to start:
+Currently in order to use Native manager some session ini settings need to be set to specific values prior to session start, otherwise it will fail to start:
 
 * `session.use_trans_sid` to `false`
 * `session.use_cookies` to `true`
@@ -156,16 +170,14 @@ Some session ini settings need to be set to specific values prior to start sessi
 * `session.use_strict_mode` to `false`
 * `session.cache_limiter` to `''` _(empty string)_
 
-> Prevents session headers to be automatically sent to user by PHP itself. **It's the developer's responsibility to include corresponding cache headers in response object**, which should be the case in the first place instead of relying on PHP environment settings.
+> This values prevent session headers to be automatically sent to user by PHP itself. **It's the developer's responsibility to include corresponding cache headers in response object**, which should be the case in the first place instead of relying on PHP environment.
 
-### Handler
+```php
+$configuration = new \Jgut\Sessionware\Configuration($settings);
+$handler = new \Jgut\Sessionware\Handler\Memory();
 
-Handlers accompany Native manager and is a replacement for `session.save_handler` ini setting. It allows for the selection of several ways of persisting session:
-
-* `\Jgut\Sessionware\Handler\Native` use PHP built-in `files` session saving
-* `\Jgut\Sessionware\Handler\Memory` an in-memory session for testing purposes
-* `\Jgut\Sessionware\Handler\Memcached` use a memcached service to save session
-* `\Jgut\Sessionware\Handler\Redis` use a Redis instance to store session
+$manager = new \Jgut\Sessionware\Manager\Native($configuration, $handler));
+```
 
 ### Session
 
@@ -184,6 +196,10 @@ The session manager providing a nice OOP API to access session related actions:
 * `Session::clear()` emptying session variables
 * `Session::close()` closing session saving its contents
 * `Session::destroy()` destroying session and all its contents
+
+```php
+$session = new \Jgut\Sessionware\Session($manager, ['user' => null]);
+```
 
 **Never** make use of PHP built-in session handling "session_*" function (Session object won't be in sync) or `$_SESSION` global variable (changes will be ignored and overridden).
 
