@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware;
 
+use Defuse\Crypto\Core;
 use Jgut\Sessionware\Traits\NativeSessionTrait;
 
 /**
@@ -53,11 +54,6 @@ class Configuration
     /**
      * @var string
      */
-    protected $timeoutKey;
-
-    /**
-     * @var string
-     */
     protected $cookiePath;
 
     /**
@@ -74,6 +70,16 @@ class Configuration
      * @var bool
      */
     protected $cookieHttpOnly;
+
+    /**
+     * @var string
+     */
+    protected $encryptionKey;
+
+    /**
+     * @var string
+     */
+    protected $timeoutKey;
 
     /**
      * Configuration constructor.
@@ -106,11 +112,11 @@ class Configuration
             'name'           => $this->getStringIniSetting('name', $sessionName),
             'savePath'       => $this->getStringIniSetting('save_path', sys_get_temp_dir()),
             'lifetime'       => $sessionLifetime > 0 ? $sessionLifetime : static::LIFETIME_DEFAULT,
-            'timeoutKey'     => static::TIMEOUT_KEY_DEFAULT,
             'cookiePath'     => $this->getStringIniSetting('cookie_path', '/'),
             'cookieDomain'   => $this->getStringIniSetting('cookie_domain'),
             'cookieSecure'   => $this->hasBoolIniSetting('cookie_secure'),
             'cookieHttpOnly' => $this->hasBoolIniSetting('cookie_httponly'),
+            'timeoutKey'     => static::TIMEOUT_KEY_DEFAULT,
         ];
     }
 
@@ -129,6 +135,7 @@ class Configuration
             'cookieHttpOnly',
             'savePath',
             'lifetime',
+            'encryptionKey',
             'timeoutKey',
         ];
 
@@ -323,6 +330,36 @@ class Configuration
         }
 
         $this->lifetime = (int) $lifetime;
+
+        return $this;
+    }
+
+    /**
+     * Set session encryption key.
+     *
+     * @return string|null
+     */
+    public function getEncryptionKey()
+    {
+        return $this->encryptionKey;
+    }
+
+    /**
+     * Set session encryption key.
+     *
+     * @param string $encryptionKey
+     *
+     * @throws \InvalidArgumentException
+     *
+     * @return static
+     */
+    public function setEncryptionKey(string $encryptionKey) : self
+    {
+        if (trim($encryptionKey) === '') {
+            throw new \InvalidArgumentException('Session encryption key must be a non empty string');
+        }
+
+        $this->encryptionKey = $encryptionKey;
 
         return $this;
     }

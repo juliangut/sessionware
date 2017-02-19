@@ -21,9 +21,9 @@ class Memory implements Handler
     use HandlerTrait;
 
     /**
-     * @var array
+     * @var string
      */
-    protected $data = [];
+    protected $data = 'a:0:{}';
 
     /**
      * {@inheritdoc}
@@ -54,7 +54,7 @@ class Memory implements Handler
      */
     public function read($sessionId)
     {
-        return serialize($this->data);
+        return $this->data;
     }
 
     /**
@@ -64,7 +64,7 @@ class Memory implements Handler
      */
     public function write($sessionId, $sessionData)
     {
-        $this->data = unserialize($sessionData);
+        $this->data = $sessionData;
 
         return true;
     }

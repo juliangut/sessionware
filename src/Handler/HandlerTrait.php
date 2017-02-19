@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Handler;
 
+use Defuse\Crypto\Core;
+use Defuse\Crypto\Crypto;
 use Jgut\Sessionware\Configuration;
 
 /**
@@ -49,5 +51,41 @@ trait HandlerTrait
         if ($this->configuration === null) {
             throw new \RuntimeException('Configuration must be set prior to use');
         }
+    }
+
+    /**
+     * Encrypt session data based on configuration encryption key.
+     *
+     * @param string $plainData
+     *
+     * @return string
+     */
+    protected function encryptSessionData(string $plainData) : string
+    {
+        if (!$this->configuration->getEncryptionKey()) {
+            return $plainData;
+        }
+
+        $encryptionKey = str_pad($this->configuration->getEncryptionKey(), 32, '=');
+
+        return Crypto::encryptWithPassword($plainData, $encryptionKey);
+    }
+
+    /**
+     * Decrypt session data based on configuration encryption key.
+     *
+     * @param string $encryptedData
+     *
+     * @return string
+     */
+    protected function decryptSessionData(string $encryptedData) : string
+    {
+        if (!$this->configuration->getEncryptionKey()) {
+            return $encryptedData;
+        }
+
+        $encryptionKey = str_pad($this->configuration->getEncryptionKey(), 32, '=');
+
+        return Crypto::decryptWithPassword($encryptedData, $encryptionKey);
     }
 }

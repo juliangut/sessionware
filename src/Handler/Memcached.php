@@ -62,7 +62,9 @@ class Memcached implements Handler
      */
     public function read($sessionId)
     {
-        return $this->driver->get($sessionId) ?: '';
+        $sessionData = $this->driver->get($sessionId);
+
+        return $sessionData ? $this->decryptSessionData($sessionData) : 'a:0:{}';
     }
 
     /**
@@ -70,7 +72,11 @@ class Memcached implements Handler
      */
     public function write($sessionId, $sessionData)
     {
-        return $this->driver->set($sessionId, $sessionData, time() + $this->configuration->getLifetime());
+        return $this->driver->set(
+            $sessionId,
+            $this->encryptSessionData($sessionData),
+            time() + $this->configuration->getLifetime()
+        );
     }
 
     /**

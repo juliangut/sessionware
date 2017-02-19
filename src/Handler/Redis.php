@@ -66,7 +66,7 @@ class Redis implements Handler
 
         $this->driver->expire($sessionId, $this->configuration->getLifetime());
 
-        return $sessionData;
+        return $this->decryptSessionData($sessionData);
     }
 
     /**
@@ -74,7 +74,7 @@ class Redis implements Handler
      */
     public function write($sessionId, $sessionData)
     {
-        $this->driver->set($sessionId, $sessionData);
+        $this->driver->set($sessionId, $this->encryptSessionData($sessionData));
         $this->driver->expire($sessionId, $this->configuration->getLifetime());
 
         return true;

@@ -95,11 +95,12 @@ $configuration = new Configuration([
   'name' => 'Sessionware',
   'savePath' => '/tmp/Sessionware',
   'lifetime' => SessionWare::SESSION_LIFETIME_NORMAL,
-  'timeoutKey' => '__SESSIONWARE_TIMEOUT_TIMESTAMP__',
   'cookieDomain' => 'example.com',
   'cookiePath' => '/',
   'cookieSecure' => false,
   'cookieHttpOnly' => true,
+  'encryptionKey' => 'super_secret_encryption_key',
+  'timeoutKey' => '__SESSIONWARE_TIMEOUT_TIMESTAMP__',
 ]);
 ```
 
@@ -130,16 +131,24 @@ There are six session lifetime constants available for convenience:
 * `Session::SESSION_LIFETIME_EXTENDED` = 1 hour
 * `Session::SESSION_LIFETIME_INFINITE` = `PHP_INT_MAX`, around 1145 years on x86_64 architecture
 
+#### cookiePath, cookieDomain, cookieSecure and cookieHttpOnly
+
+Configure session cookie parameters. Defaults to PHP session cookie `session.cookie_path`, `session.cookie_domain`, `session.cookie_secure` and `session.cookie_httponly` respectively  if not provided.
+
+#### encryptionKey
+
+Serialized session content can be encrypted before being persisted and decrypted on session start. In order to use the encryption/decryption of session data Defuse's [php-encryption](https://github.com/defuse/php-encryption) library is needed.
+
+```php
+composer require defuse/php-encryption
+```
+
 #### timeoutKey
 
 Parameter stored in session array to control session validity according to `lifetime` parameter. Defaults to `
 \Jgut\Sessionware\Configuration::TIMEOUT_KEY_DEFAULT`
 
-_It is advised not to change this value unless it conflicts with one of your own session keys (which is unlikely if not directly impossible)_
-
-#### cookiePath, cookieDomain, cookieSecure and cookieHttpOnly
-
-Configure session cookie parameters. Defaults to PHP session cookie `session.cookie_path`, `session.cookie_domain`, `session.cookie_secure` and `session.cookie_httponly` respectively  if not provided.
+_It is advised not to change this value unless it conflicts with one of your own session keys, which is unlikely if not directly impossible_
 
 ### Handler
 

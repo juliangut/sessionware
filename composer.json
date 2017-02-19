@@ -28,6 +28,7 @@
     "psr/http-message": "^1.0"
   },
   "require-dev": {
+    "defuse/php-encryption": "^2.0",
     "friendsofphp/php-cs-fixer": "^1.12",
     "humbug/humbug": "~1.0@dev",
     "phpmd/phpmd": "^2.0",
@@ -39,6 +40,7 @@
     "zendframework/zend-diactoros": "^1.3"
   },
   "suggest": {
+    "defuse/php-encryption": "Encryption/decryption of session data"
   },
   "autoload": {
     "psr-4": {

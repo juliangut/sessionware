@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Tests\Handler;
 
+use Defuse\Crypto\Crypto;
 use Jgut\Sessionware\Configuration;
 use Jgut\Sessionware\Handler\Predis;
 use Predis\Client;
@@ -27,6 +28,28 @@ class PredisTest extends HandlerTestCase
      */
     public function testUse()
     {
+        $configuration = $this->getMockBuilder(Configuration::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $configuration
+            ->expects(self::any())
+            ->method('getName')
+            ->will(self::returnValue('Sessionware'));
+        $configuration
+            ->expects(self::any())
+            ->method('getLifetime')
+            ->will(self::returnValue(Configuration::LIFETIME_EXTENDED));
+        $configuration
+            ->expects(self::any())
+            ->method('getEncryptionKey')
+            ->will(self::returnValue('super_secret_key'));
+        /* @var Configuration $configuration */
+
+        $sessionData = Crypto::encryptWithPassword(
+            $this->sessionData,
+            str_pad($configuration->getEncryptionKey(), 32, '=')
+        );
+
         $driver = $this->getMockBuilder(Client::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -34,11 +57,11 @@ class PredisTest extends HandlerTestCase
             ->expects(self::any())
             ->method('__call')
             ->withConsecutive(['get'], ['expire'], ['set'], ['expire'], ['del'])
-            ->will(self::onConsecutiveCalls($this->sessionData, true, true, true, true));
+            ->will(self::onConsecutiveCalls($sessionData, true, true, true, true));
         /* @var Client $driver */
 
         $handler = new Predis($driver);
-        $handler->setConfiguration($this->configuration);
+        $handler->setConfiguration($configuration);
 
         self::assertTrue($handler->open(sys_get_temp_dir(), Configuration::SESSION_NAME_DEFAULT));
         self::assertTrue($handler->close());

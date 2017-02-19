@@ -69,6 +69,22 @@ class Native extends \SessionHandler implements Handler
 
     /**
      * {@inheritdoc}
+     */
+    public function read($sessionId)
+    {
+        return $this->decryptSessionData(parent::read($sessionId));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function write($sessionId, $sessionData)
+    {
+        return parent::write($sessionId, $this->encryptSessionData($sessionData));
+    }
+
+    /**
+     * {@inheritdoc}
      *
      * @SuppressWarnings(PMD.ShortMethodName)
      * @SuppressWarnings(PMD.UnusedFormalParameter)

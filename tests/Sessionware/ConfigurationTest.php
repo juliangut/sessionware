@@ -28,11 +28,12 @@ class ConfigurationTest extends TestCase
         self::assertEquals(Configuration::SESSION_NAME_DEFAULT, $configuration->getName());
         self::assertEquals(sys_get_temp_dir(), $configuration->getSavePath());
         self::assertEquals(Configuration::LIFETIME_DEFAULT, $configuration->getLifetime());
-        self::assertEquals(Configuration::TIMEOUT_KEY_DEFAULT, $configuration->getTimeoutKey());
         self::assertEquals('/', $configuration->getCookiePath());
         self::assertEquals('', $configuration->getCookieDomain());
         self::assertFalse($configuration->isCookieSecure());
         self::assertFalse($configuration->isCookieHttpOnly());
+        self::assertNull($configuration->getEncryptionKey());
+        self::assertEquals(Configuration::TIMEOUT_KEY_DEFAULT, $configuration->getTimeoutKey());
     }
 
     /**
@@ -76,11 +77,12 @@ class ConfigurationTest extends TestCase
             'name'           => 'SESSION',
             'savePath'       => sys_get_temp_dir() . '/SESS',
             'lifetime'       => Configuration::LIFETIME_SHORT,
-            'timeoutKey'     => 'TIMEOUT',
             'cookiePath'     => '/path',
             'cookieDomain'   => 'example.com',
             'cookieSecure'   => true,
             'cookieHttpOnly' => true,
+            'timeoutKey'     => '__CUSTOM_TIMEOUT__',
+            'encryptionKey'  => 'super_secret_key'
         ];
 
         $configuration = new Configuration($configs);
@@ -88,11 +90,12 @@ class ConfigurationTest extends TestCase
         self::assertEquals($configs['name'], $configuration->getName());
         self::assertEquals($configs['savePath'], $configuration->getSavePath());
         self::assertEquals($configs['lifetime'], $configuration->getLifetime());
-        self::assertEquals($configs['timeoutKey'], $configuration->getTimeoutKey());
         self::assertEquals($configs['cookiePath'], $configuration->getCookiePath());
         self::assertEquals($configs['cookieDomain'], $configuration->getCookieDomain());
         self::assertTrue($configuration->isCookieSecure());
         self::assertTrue($configuration->isCookieHttpOnly());
+        self::assertEquals($configs['encryptionKey'], $configuration->getEncryptionKey());
+        self::assertEquals($configs['timeoutKey'], $configuration->getTimeoutKey());
     }
 
     /**
@@ -120,6 +123,15 @@ class ConfigurationTest extends TestCase
     public function testInvalidLifetime()
     {
         new Configuration(['lifetime' => 0]);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Session encryption key must be a non empty string
+     */
+    public function testInvalidEncryptionKey()
+    {
+        new Configuration(['encryptionKey' => ' ']);
     }
 
     /**
