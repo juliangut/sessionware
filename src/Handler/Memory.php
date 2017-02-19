@@ -29,6 +29,8 @@ class Memory implements Handler
      * {@inheritdoc}
      *
      * @throws \RuntimeException
+     *
+     * @SuppressWarnings(PMD.UnusedFormalParameter)
      */
     public function open($savePath, $sessionName)
     {
@@ -47,6 +49,8 @@ class Memory implements Handler
 
     /**
      * {@inheritdoc}
+     *
+     * @SuppressWarnings(PMD.UnusedFormalParameter)
      */
     public function read($sessionId)
     {
@@ -55,6 +59,8 @@ class Memory implements Handler
 
     /**
      * {@inheritdoc}
+     *
+     * @SuppressWarnings(PMD.UnusedFormalParameter)
      */
     public function write($sessionId, $sessionData)
     {
@@ -65,6 +71,8 @@ class Memory implements Handler
 
     /**
      * {@inheritdoc}
+     *
+     * @SuppressWarnings(PMD.UnusedFormalParameter)
      */
     public function destroy($sessionId)
     {
@@ -77,6 +85,7 @@ class Memory implements Handler
      * {@inheritdoc}
      *
      * @SuppressWarnings(PMD.ShortMethodName)
+     * @SuppressWarnings(PMD.UnusedFormalParameter)
      */
     public function gc($maxLifetime)
     {

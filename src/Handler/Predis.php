@@ -13,24 +13,26 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Handler;
 
+use Predis\Client;
+
 /**
- * Redis session handler.
+ * Predis session handler.
  */
-class Redis implements Handler
+class Predis implements Handler
 {
     use HandlerTrait;
 
     /**
-     * @var \Redis
+     * @var Client
      */
     protected $driver;
 
     /**
-     * Redis session handler constructor.
+     * Predis session handler constructor.
      *
-     * @param \Redis $driver
+     * @param Client $driver
      */
-    public function __construct(\Redis $driver)
+    public function __construct(Client $driver)
     {
         $this->driver = $driver;
     }
@@ -85,7 +87,7 @@ class Redis implements Handler
      */
     public function destroy($sessionId)
     {
-        $this->driver->del($sessionId);
+        $this->driver->del([$sessionId]);
 
         return true;
     }

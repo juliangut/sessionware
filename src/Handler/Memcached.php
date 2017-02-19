@@ -39,6 +39,8 @@ class Memcached implements Handler
      * {@inheritdoc}
      *
      * @throws \RuntimeException
+     *
+     * @SuppressWarnings(PMD.UnusedFormalParameter)
      */
     public function open($savePath, $sessionName)
     {
@@ -83,6 +85,7 @@ class Memcached implements Handler
      * {@inheritdoc}
      *
      * @SuppressWarnings(PMD.ShortMethodName)
+     * @SuppressWarnings(PMD.UnusedFormalParameter)
      */
     public function gc($maxLifetime)
     {

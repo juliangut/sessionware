@@ -71,6 +71,7 @@ class Native extends \SessionHandler implements Handler
      * {@inheritdoc}
      *
      * @SuppressWarnings(PMD.ShortMethodName)
+     * @SuppressWarnings(PMD.UnusedFormalParameter)
      */
     public function gc($maxLifetime)
     {
