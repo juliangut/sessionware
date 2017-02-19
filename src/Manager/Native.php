@@ -268,7 +268,6 @@ class Native implements Manager
         $_SESSION = null;
 
         $this->sessionStarted = false;
-        $this->sessionId = null;
 
         if (session_status() === PHP_SESSION_ACTIVE) {
             // @codeCoverageIgnoreStart

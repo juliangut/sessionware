@@ -160,7 +160,18 @@ The responsible of actual session management.
 
 Currently only `Native` manager exist that uses built-in PHP session capabilities.
 
-#### Requisites
+#### Native manager
+
+Be aware that upon session start `session.serialize_handler` ini setting will be set to 'php_serialize' and `session.gc_maxlifetime` will be updated to session lifetime as defined in configuration
+
+```php
+$configuration = new \Jgut\Sessionware\Configuration($settings);
+$handler = new \Jgut\Sessionware\Handler\Memory();
+
+$manager = new \Jgut\Sessionware\Manager\Native($configuration, $handler));
+```
+
+##### Requisites
 
 Currently in order to use Native manager some session ini settings need to be set to specific values prior to session start, otherwise it will fail to start:
 
@@ -172,18 +183,11 @@ Currently in order to use Native manager some session ini settings need to be se
 
 > This values prevent session headers to be automatically sent to user by PHP itself. **It's the developer's responsibility to include corresponding cache headers in response object**, which should be the case in the first place instead of relying on PHP environment.
 
-```php
-$configuration = new \Jgut\Sessionware\Configuration($settings);
-$handler = new \Jgut\Sessionware\Handler\Memory();
-
-$manager = new \Jgut\Sessionware\Manager\Native($configuration, $handler));
-```
-
 ### Session
 
-> Only scalar values allowed as session variables
+> Be aware that only scalar values allowed as session variables, object serialization is cumbersome
 
-The session manager providing a nice OOP API to access session related actions:
+The session manager provides a nice OOP API to access session related actions:
 
 * `Session::start()` session starting
 * `Session::isActive()` verification of active session
@@ -201,7 +205,7 @@ The session manager providing a nice OOP API to access session related actions:
 $session = new \Jgut\Sessionware\Session($manager, ['user' => null]);
 ```
 
-**Never** make use of PHP built-in session handling "session_*" function (Session object won't be in sync) or `$_SESSION` global variable (changes will be ignored and overridden).
+**Never** make use of PHP built-in session handling "session_*" function (Session object would end up not being in sync) or `$_SESSION` global variable (changes will be ignored and overridden).
 
 #### Events
 

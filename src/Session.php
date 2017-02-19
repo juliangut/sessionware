@@ -147,7 +147,7 @@ class Session implements EmitterAwareInterface
     }
 
     /**
-     * Is there an active session.
+     * Has session been started.
      *
      * @return bool
      */
