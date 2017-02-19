@@ -15,7 +15,6 @@ namespace Jgut\Sessionware\Tests\Handler;
 
 use Jgut\Sessionware\Configuration;
 use Jgut\Sessionware\Handler\Memory;
-use Jgut\Sessionware\Tests\SessionTestCase;
 
 /**
  * Void session handler test class.

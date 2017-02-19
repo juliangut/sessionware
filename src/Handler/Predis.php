@@ -21,6 +21,11 @@ use Predis\Client;
 class Predis extends Redis
 {
     /**
+     * @var Client
+     */
+    protected $driver;
+
+    /**
      * Predis session handler constructor.
      *
      * @param Client $driver
