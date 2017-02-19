@@ -14,7 +14,7 @@
 
 Encapsulates PHP session management into a nice API compatible with PSR7.
 
-Generates a 80 character long session_id using `random_bytes`, a truly cryptographically secure pseudo-random generator, instead of `session.hash_function` hash algorithm.
+Generates a 80 character long session_id using `random_bytes`, a truly cryptographically secure pseudo-random generator, instead of `session.hash_function` algorithm.
 
 ## Installation
 
@@ -42,13 +42,13 @@ $sessionSettings = [
   'name' => 'myProjectSessionName',
   'lifetime' => Configuration::LIFETIME_EXTENDED, // 1 hour
 ];
-$configuration = new Configuration($sessionSettings);
-$handler = new NativeHandler();
-$manager = new NativeManager($configuration, $sessionHandler);
-
-$manger->setSessionId('Get session id from cookie');
-
+$manager = new NativeManager(
+    new Configuration($sessionSettings), 
+    new NativeHandler()
+);
 $session = new Session($manager);
+
+$session->setId('Get session id from cookie');
 
 $session->start();
 
@@ -67,17 +67,20 @@ use Jgut\Sessionware\Handler\Native as NativeHandler;
 use Jgut\Sessionware\Manager\Native as NativeManager;
 use Jgut\Sessionware\Middleware\SessionHandling;
 use Jgut\Sessionware\Middleware\SessionStart;
+use Jgut\Sessionware\Session;
 
 $sessionSettings = [
   'name' => 'myProjectSessionName',
   'lifetime' => Configuration::LIFETIME_EXTENDED, // 1 hour
 ];
-$configuration = new Configuration($sessionSettings);
-$handler = new NativeHandler();
-$manager = new NativeManager($configuration, $sessionHandler);
+$manager = new NativeManager(
+    new Configuration($sessionSettings), 
+    new NativeHandler()
+);
+$session = new Session($manager);
 
 $app = new \YourMiddlewareAwareApplication();
-$app->addMiddleware(new SessionHandling($manager));
+$app->addMiddleware(new SessionHandling($session));
 $app->addMiddleware(new SessionStart());
 
 // Routes
@@ -235,6 +238,13 @@ $session->addListener('post.session_close', function(Session $session) {
     echo sprintf('new session "%s" created', $session->getId());
 })
 ```
+
+## Migration from 1.x
+
+* Settings have been moved into Configuration object. This object accepts an array of settings on instantiation so it's just a matter of providing the settings to it
+* Review configuration settings names, some are slightly changed
+* Middleware use is now separated from core session management. SessionHandling middleware needs an instance of Session
+* All session related actions have been moved to Session object instead of relying in built'in PHP session management, which you should not use
 
 ## Contributing
 
