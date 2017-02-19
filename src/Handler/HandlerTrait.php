@@ -79,7 +79,7 @@ trait HandlerTrait
      */
     protected function decryptSessionData(string $encryptedData) : string
     {
-        if (!$this->configuration->getEncryptionKey()) {
+        if ($encryptedData === '' || !$this->configuration->getEncryptionKey()) {
             return $encryptedData;
         }
 
