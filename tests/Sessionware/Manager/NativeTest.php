@@ -66,6 +66,7 @@ class NativeTest extends SessionTestCase
         $manager = new Native($this->configuration, $this->handler);
 
         self::assertFalse($manager->isSessionStarted());
+        self::assertFalse($manager->isSessionDestroyed());
         self::assertSame($this->configuration, $manager->getConfiguration());
         self::assertEmpty($manager->getSessionId());
 
@@ -105,6 +106,22 @@ class NativeTest extends SessionTestCase
             ['session.use_strict_mode', '1'],
             ['session.cache_limiter', 'nocache'],
         ];
+    }
+
+    /**
+     * @runInSeparateProcess
+     *
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage Cannot start a session that has been previously destroyed
+     */
+    public function testNoSessionStartWhenDestroyed()
+    {
+        $manager = new Native($this->configuration, $this->handler);
+
+        $manager->sessionStart();
+        $manager->sessionDestroy();
+
+        $manager->sessionStart();
     }
 
     /**
@@ -289,5 +306,6 @@ class NativeTest extends SessionTestCase
         $manager->sessionDestroy();
 
         self::assertFalse(isset($_SESSION));
+        self::assertTrue($manager->isSessionDestroyed());
     }
 }

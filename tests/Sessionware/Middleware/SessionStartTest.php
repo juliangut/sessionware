@@ -13,9 +13,9 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Tests\Middleware;
 
-use Jgut\Sessionware\Session;
-use Jgut\Sessionware\Middleware\SessionStart;
 use Jgut\Sessionware\Middleware\SessionHandling;
+use Jgut\Sessionware\Middleware\SessionStart;
+use Jgut\Sessionware\Session;
 use Jgut\Sessionware\Tests\SessionTestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;

@@ -74,11 +74,11 @@ class Session implements EmitterAwareInterface
 
         $this->data = $this->sessionManager->sessionStart();
 
-        $this->emit(Event::named('post.session_start'), $this);
-
         if ($this->sessionManager->shouldRegenerateId()) {
             $this->regenerateId();
         }
+
+        $this->emit(Event::named('post.session_start'), $this);
 
         $this->manageTimeout();
     }
@@ -149,6 +149,16 @@ class Session implements EmitterAwareInterface
     public function isActive() : bool
     {
         return $this->sessionManager->isSessionStarted();
+    }
+
+    /**
+     * Has session been destroyed.
+     *
+     * @return bool
+     */
+    public function isDestroyed() : bool
+    {
+        return $this->sessionManager->isSessionDestroyed();
     }
 
     /**
@@ -258,7 +268,7 @@ class Session implements EmitterAwareInterface
      *
      * @return static
      */
-    public function clear()
+    public function clear() : self
     {
         $timeoutKey = $this->getConfiguration()->getTimeoutKey();
         $sessionTimeout = array_key_exists($timeoutKey, $this->data)

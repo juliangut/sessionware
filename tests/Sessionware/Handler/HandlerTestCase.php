@@ -27,6 +27,11 @@ abstract class HandlerTestCase extends SessionTestCase
     protected $configuration;
 
     /**
+     * @var string
+     */
+    protected $sessionData = 'a:1:{s:10:"sessionKey";s:11:"sessionData";}';
+
+    /**
      * {@inheritdoc}
      */
     public function setUp()

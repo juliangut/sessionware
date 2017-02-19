@@ -38,15 +38,13 @@ class MemcachedTest extends HandlerTestCase
      */
     public function testUse()
     {
-        $sessionData = 'a:1:{s:10:"sessionKey";s:11:"sessionData";}';
-
         $driver = $this->getMockBuilder(\Memcached::class)
             ->disableOriginalConstructor()
             ->getMock();
         $driver
             ->expects(self::any())
             ->method('get')
-            ->will(self::returnValue($sessionData));
+            ->will(self::returnValue($this->sessionData));
         $driver
             ->expects(self::any())
             ->method('set')
@@ -62,8 +60,8 @@ class MemcachedTest extends HandlerTestCase
 
         self::assertTrue($handler->open(sys_get_temp_dir(), Configuration::SESSION_NAME_DEFAULT));
         self::assertTrue($handler->close());
-        self::assertEquals($sessionData, $handler->read('00000000000000000000000000000000'));
-        self::assertTrue($handler->write('00000000000000000000000000000000', $sessionData));
+        self::assertEquals($this->sessionData, $handler->read('00000000000000000000000000000000'));
+        self::assertTrue($handler->write('00000000000000000000000000000000', $this->sessionData));
         self::assertTrue($handler->destroy('00000000000000000000000000000000'));
         self::assertTrue($handler->gc(Configuration::LIFETIME_EXTENDED));
     }

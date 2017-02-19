@@ -144,6 +144,7 @@ class SessionTest extends SessionTestCase
         $session = new Session($manager);
 
         self::assertFalse($session->isActive());
+        self::assertFalse($session->isDestroyed());
 
         $session->start();
         $session->start();
@@ -287,6 +288,10 @@ class SessionTest extends SessionTestCase
             ->method('isSessionStarted')
             ->will(self::onConsecutiveCalls(false, true, true));
         $manager
+            ->expects(self::any())
+            ->method('isSessionDestroyed')
+            ->will(self::returnValue(true));
+        $manager
             ->expects(self::once())
             ->method('sessionStart')
             ->will(self::returnValue([]));
@@ -308,6 +313,7 @@ class SessionTest extends SessionTestCase
         $session->destroy();
 
         self::assertFalse($session->has('saveKey'));
+        self::assertTrue($session->isDestroyed());
     }
 
     /**

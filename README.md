@@ -169,6 +169,8 @@ Handlers accompany Native manager and is a replacement for `session.save_handler
 
 ### Session
 
+> Only scalar values allowed as session variables
+
 The session manager providing a nice OOP API to access session related actions:
 
 * `Session::start()` session starting

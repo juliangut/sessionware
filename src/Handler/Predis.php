@@ -18,15 +18,8 @@ use Predis\Client;
 /**
  * Predis session handler.
  */
-class Predis implements Handler
+class Predis extends Redis
 {
-    use HandlerTrait;
-
-    /**
-     * @var Client
-     */
-    protected $driver;
-
     /**
      * Predis session handler constructor.
      *
@@ -35,71 +28,5 @@ class Predis implements Handler
     public function __construct(Client $driver)
     {
         $this->driver = $driver;
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @throws \RuntimeException
-     *
-     * @SuppressWarnings(PMD.UnusedFormalParameter)
-     */
-    public function open($savePath, $sessionName)
-    {
-        $this->testConfiguration();
-
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function close()
-    {
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function read($sessionId)
-    {
-        $sessionData = $this->driver->get($sessionId);
-
-        $this->driver->expire($sessionId, $this->configuration->getLifetime());
-
-        return $sessionData;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function write($sessionId, $sessionData)
-    {
-        $this->driver->set($sessionId, $sessionData);
-        $this->driver->expire($sessionId, $this->configuration->getLifetime());
-
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function destroy($sessionId)
-    {
-        $this->driver->del([$sessionId]);
-
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @SuppressWarnings(PMD.ShortMethodName)
-     * @SuppressWarnings(PMD.UnusedFormalParameter)
-     */
-    public function gc($maxLifetime)
-    {
-        return true;
     }
 }

@@ -14,51 +14,30 @@ declare(strict_types=1);
 namespace Jgut\Sessionware\Tests\Handler;
 
 use Jgut\Sessionware\Configuration;
-use Jgut\Sessionware\Handler\Redis;
+use Jgut\Sessionware\Handler\Predis;
+use Predis\Client;
 
 /**
- * Redis session handler test class.
+ * Predis session handler test class.
  */
-class RedisTest extends HandlerTestCase
+class PredisTest extends HandlerTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function setUp()
-    {
-        if (!class_exists('Redis', false)) {
-            self::markTestSkipped('"ext-redis" is needed to run this tests');
-        }
-
-        parent::setUp();
-    }
-
     /**
      * @runInSeparateProcess
      */
     public function testUse()
     {
-        $driver = $this->getMockBuilder(\Redis::class)
+        $driver = $this->getMockBuilder(Client::class)
             ->disableOriginalConstructor()
             ->getMock();
         $driver
             ->expects(self::any())
-            ->method('expire');
-        $driver
-            ->expects(self::any())
-            ->method('get')
-            ->will(self::returnValue($this->sessionData));
-        $driver
-            ->expects(self::any())
-            ->method('set')
-            ->will(self::returnValue(true));
-        $driver
-            ->expects(self::any())
-            ->method('del')
-            ->will(self::returnValue(true));
-        /* @var \Redis $driver */
+            ->method('__call')
+            ->withConsecutive(['get'], ['expire'], ['set'], ['expire'], ['del'])
+            ->will(self::onConsecutiveCalls($this->sessionData, true, true, true, true));
+        /* @var Client $driver */
 
-        $handler = new Redis($driver);
+        $handler = new Predis($driver);
         $handler->setConfiguration($this->configuration);
 
         self::assertTrue($handler->open(sys_get_temp_dir(), Configuration::SESSION_NAME_DEFAULT));

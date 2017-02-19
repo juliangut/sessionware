@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Middleware;
 
-use Jgut\Sessionware\Manager\Manager;
 use Jgut\Sessionware\Session;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -74,28 +73,15 @@ class SessionHandling
             $this->session->setId($requestCookies[$sessionName]);
         }
 
+        /* @var ResponseInterface $response */
         $response = $next($request->withAttribute(static::SESSION_KEY, $this->session), $response);
 
-        $response = $this->respondWithSessionCookie($response);
+        if (!empty($this->session->getId()) && !$this->session->isDestroyed()) {
+            $response = $response->withAddedHeader('Set-Cookie', $this->session->getCookieString());
+        }
 
         $this->session->close();
 
         return $response;
-    }
-
-    /**
-     * Add session cookie Set-Cookie header to response.
-     *
-     * @param ResponseInterface $response
-     *
-     * @return ResponseInterface
-     */
-    protected function respondWithSessionCookie(ResponseInterface $response) : ResponseInterface
-    {
-        if (!$this->session->isActive()) {
-            return $response;
-        }
-
-        return $response->withAddedHeader('Set-Cookie', $this->session->getCookieString());
     }
 }

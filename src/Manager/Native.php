@@ -48,6 +48,13 @@ class Native implements Manager
     protected $sessionStarted = false;
 
     /**
+     * Session has been destroyed.
+     *
+     * @var bool
+     */
+    protected $sessionDestroyed = false;
+
+    /**
      * Session manager constructor.
      *
      * @param Configuration $configuration
@@ -113,6 +120,10 @@ class Native implements Manager
     public function sessionStart() : array
     {
         $this->verifyIniSettings();
+
+        if ($this->sessionDestroyed) {
+            throw new \RuntimeException('Cannot start a session that has been previously destroyed');
+        }
 
         if ($this->sessionStarted || session_status() === PHP_SESSION_ACTIVE) {
             throw new \RuntimeException('Session has already been started. Check "session.auto_start" ini setting');
@@ -284,6 +295,7 @@ class Native implements Manager
         session_destroy();
 
         $this->sessionStarted = false;
+        $this->sessionDestroyed = true;
 
         if (session_status() === PHP_SESSION_ACTIVE) {
             // @codeCoverageIgnoreStart
@@ -298,6 +310,14 @@ class Native implements Manager
     public function isSessionStarted() : bool
     {
         return $this->sessionStarted;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function isSessionDestroyed() : bool
+    {
+        return $this->sessionDestroyed;
     }
 
     /**

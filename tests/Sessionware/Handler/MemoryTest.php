@@ -20,7 +20,7 @@ use Jgut\Sessionware\Tests\SessionTestCase;
 /**
  * Void session handler test class.
  */
-class MemoryTest extends SessionTestCase
+class MemoryTest extends HandlerTestCase
 {
     /**
      * @runInSeparateProcess
@@ -38,9 +38,8 @@ class MemoryTest extends SessionTestCase
         self::assertTrue($handler->open(sys_get_temp_dir(), Configuration::SESSION_NAME_DEFAULT));
         self::assertTrue($handler->close());
         self::assertEquals('a:0:{}', $handler->read('00000000000000000000000000000000'));
-        $sessionData = serialize(['sessionVar' => 'sessionValue']);
-        self::assertTrue($handler->write('00000000000000000000000000000000', $sessionData));
-        self::assertEquals($sessionData, $handler->read('00000000000000000000000000000000'));
+        self::assertTrue($handler->write('00000000000000000000000000000000', $this->sessionData));
+        self::assertEquals($this->sessionData, $handler->read('00000000000000000000000000000000'));
         self::assertTrue($handler->destroy('00000000000000000000000000000000'));
         self::assertTrue($handler->gc(Configuration::SESSION_NAME_DEFAULT));
     }

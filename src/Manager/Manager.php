@@ -64,11 +64,18 @@ interface Manager
     public function sessionDestroy();
 
     /**
-     * Is session started.
+     * Has session been started.
      *
      * @return bool
      */
     public function isSessionStarted() : bool;
+
+    /**
+     * Has session been destroyed.
+     *
+     * @return bool
+     */
+    public function isSessionDestroyed() : bool;
 
     /**
      * Should session identifier be regenerated.
