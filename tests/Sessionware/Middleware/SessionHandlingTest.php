@@ -104,7 +104,16 @@ class SessionHandlingTest extends SessionTestCase
             ->will(self::returnValue($this->configuration));
         /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
-        $middleware = new SessionHandling($manager);
+        $session = $this->getMockBuilder(Session::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $session
+            ->expects(self::any())
+            ->method('getManager')
+            ->will(self::returnValue($manager));
+        /* @var Session $session */
+
+        $middleware = new SessionHandling($session);
 
         $assert = $this;
         $callback = function (ServerRequestInterface $request, ResponseInterface $response) use ($assert) {
@@ -123,9 +132,9 @@ class SessionHandlingTest extends SessionTestCase
      */
     public function testSessionCookie()
     {
-        $manager = new Native($this->configuration, new Memory());
+        $session = new Session(new Native($this->configuration, new Memory()));
 
-        $middleware = new SessionHandling($manager);
+        $middleware = new SessionHandling($session);
 
         $sessionId = 'ch3OZUQU3J93jqFRlbC7t5zzUrXq1m8AmBj87wdaUNZMzKHb9T5sYd8iZItWFR720NfoYmAztV3Izbpt';
         $request = ServerRequestFactory::fromGlobals(

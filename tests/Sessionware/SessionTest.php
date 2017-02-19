@@ -149,7 +149,6 @@ class SessionTest extends SessionTestCase
         $session->start();
 
         self::assertTrue($session->has(Configuration::TIMEOUT_KEY_DEFAULT));
-        self::assertEquals($session->getTimeout(), $session->get(Configuration::TIMEOUT_KEY_DEFAULT));
     }
 
     /**
@@ -332,10 +331,6 @@ class SessionTest extends SessionTestCase
         $manager = $this->getMockBuilder(Native::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $manager
-            ->expects(self::any())
-            ->method('isSessionStarted')
-            ->will(self::onConsecutiveCalls(false, true, true));
         $manager
             ->expects(self::any())
             ->method('getSessionId')

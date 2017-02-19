@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Middleware;
 
-use Jgut\Sessionware\Configuration;
 use Jgut\Sessionware\Manager\Manager;
 use Jgut\Sessionware\Session;
 use Psr\Http\Message\ResponseInterface;
@@ -27,11 +26,6 @@ class SessionHandling
     const SESSION_KEY = '__SESSIONWARE_SESSION__';
 
     /**
-     * @var Manager
-     */
-    protected $sessionManager;
-
-    /**
      * @var Session
      */
     protected $session;
@@ -39,11 +33,11 @@ class SessionHandling
     /**
      * Middleware constructor.
      *
-     * @param Manager $sessionManager
+     * @param Session $session
      */
-    public function __construct(Manager $sessionManager)
+    public function __construct(Session $session)
     {
-        $this->sessionManager = $sessionManager;
+        $this->session = $session;
     }
 
     /**
@@ -73,14 +67,12 @@ class SessionHandling
         ServerRequestInterface $request,
         ResponseInterface $response,
         callable $next
-    ) :ResponseInterface {
+    ) : ResponseInterface {
         $requestCookies = $request->getCookieParams();
-        $sessionName = $this->sessionManager->getConfiguration()->getName();
+        $sessionName = $this->session->getManager()->getConfiguration()->getName();
         if (array_key_exists($sessionName, $requestCookies) && !empty($requestCookies[$sessionName])) {
-            $this->sessionManager->setSessionId($requestCookies[$sessionName]);
+            $this->session->setId($requestCookies[$sessionName]);
         }
-
-        $this->session = new Session($this->sessionManager);
 
         $response = $next($request->withAttribute(static::SESSION_KEY, $this->session), $response);
 

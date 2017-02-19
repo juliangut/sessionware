@@ -101,8 +101,6 @@ class Native implements Manager
         }
 
         $this->sessionId = $sessionId;
-
-        return $this;
     }
 
     /**

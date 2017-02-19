@@ -33,10 +33,10 @@ require 'vendor/autoload.php';
 Stand alone session management.
 
 ```php
-use \Jgut\Middleware\Sessionware\Configuration;
-use \Jgut\Middleware\Sessionware\Handler\Native as NativeHandler;
-use \Jgut\Middleware\Sessionware\Manager\Native as NativeManager;
-use \Jgut\Middleware\Sessionware\Session;
+use Jgut\Sessionware\Configuration;
+use Jgut\Sessionware\Handler\Native as NativeHandler;
+use Jgut\Sessionware\Manager\Native as NativeManager;
+use Jgut\Sessionware\Session;
 
 $sessionSettings = [
   'name' => 'myProjectSessionName',
@@ -62,11 +62,11 @@ Integrated on a Middleware workflow:
 ```php
 require 'vendor/autoload.php';
 
-use \Jgut\Middleware\Sessionware\Configuration;
-use \Jgut\Middleware\Sessionware\Handler\Native as NativeHandler;
-use \Jgut\Middleware\Sessionware\Manager\Native as NativeManager;
-use \Jgut\Middleware\Sessionware\Middleware\SessionHandling;
-use \Jgut\Middleware\Sessionware\Middleware\SessionStart;
+use Jgut\Sessionware\Configuration;
+use Jgut\Sessionware\Handler\Native as NativeHandler;
+use Jgut\Sessionware\Manager\Native as NativeManager;
+use Jgut\Sessionware\Middleware\SessionHandling;
+use Jgut\Sessionware\Middleware\SessionStart;
 
 $sessionSettings = [
   'name' => 'myProjectSessionName',
@@ -100,11 +100,55 @@ $configuration = new Configuration([
 ]);
 ```
 
-> Defaults extract default PHP installation session configurations so Session can be used as a direct drop-in with automatic session timeout control.
- 
-#### Pre requisites
+#### name
 
-Some session ini settings need to be set to specific values prior to start session, otherwise session will fail starting:
+Assigns session name, default PHP `PHPSESSID` session name will be used if none provided. **It is highly recommended to set a custom session name**
+
+> If using PHP's built-in 'files' session save handler you **MUST** provide a custom session name.
+
+#### savePath
+
+Native handler specific configuration, used if default 'files' session save handler is specified in `session.save_handler`. It defaults to `session.save_path` ini setting or `sys_get_temp_dir()` if empty.
+
+Final session save path will be determined by joining this parameter with session name (other than default `PHPSESSID`). This is done so that session files for current script gets separated, from other script's, into its own directory.
+
+Session garbage collector uses file access time to determine and remove expired session files. If files from sessions with different lifetime are located in the same directory they could be removed by other script/application as there is no way for the garbage collector to tell which script/application they belong to.
+
+#### lifetime
+
+Number of seconds for the session to be considered valid. uses `session.gc_maxlifetime` and `session.cookie_lifetime` to discover PHP configured session lifetime if none provided. Finally it defaults to `Session::SESSION_LIFETIME_DEFAULT` (24 minutes) if previous values are not available or their value is zero.
+
+There are six session lifetime constants available for convenience:
+
+* `Session::SESSION_LIFETIME_FLASH` = 5 minutes
+* `Session::SESSION_LIFETIME_SHORT` = 10 minutes
+* `Session::SESSION_LIFETIME_NORMAL` = 15 minutes
+* `Session::SESSION_LIFETIME_DEFAULT` = 24 minutes
+* `Session::SESSION_LIFETIME_EXTENDED` = 1 hour
+* `Session::SESSION_LIFETIME_INFINITE` = `PHP_INT_MAX`, around 1145 years on x86_64 architecture
+
+#### timeoutKey
+
+Parameter stored in session array to control session validity according to `lifetime` parameter. Defaults to 
+```
+\Jgut\Sessionware::SESSION_TIMEOUT_KEY_DEFAULT = '__SESSIONWARE_TIMEOUT_TIMESTAMP__';
+```
+
+_It is advised not to change this value unless it conflicts with one of your own session keys (which is unlikely if not directly impossible)_
+
+#### cookiePath, cookieDomain, cookieSecure and cookieHttpOnly
+
+Configure session cookie parameters. Defaults to PHP session cookie `session.cookie_path`, `session.cookie_domain`, `session.cookie_secure` and `session.cookie_httponly` respectively  if not provided.
+
+### Manager
+
+The responsible of actual session management.
+
+Currently only `Native` manager exist that uses built-in PHP session capabilities.
+
+#### Requisites
+
+Some session ini settings need to be set to specific values prior to start session, otherwise session will fail to start:
 
 * `session.use_trans_sid` to `false`
 * `session.use_cookies` to `true`
@@ -114,95 +158,61 @@ Some session ini settings need to be set to specific values prior to start sessi
 
 > Prevents session headers to be automatically sent to user by PHP itself. **It's the developer's responsibility to include corresponding cache headers in response object**, which should be the case in the first place instead of relying on PHP environment settings.
 
-#### timeoutKey
+### Handler
 
-Parameter stored in session array to control session validity according to `lifetime` parameter. Defaults to 
-```
-\Jgut\Middleware\SessionWare::SESSION_TIMEOUT_KEY_DEFAULT = '__SESSIONWARE_TIMEOUT_TIMESTAMP__';
-```
+Handlers accompany Native manager and is a replacement for `session.save_handler` ini setting. It allows for the selection of several ways of persisting session:
 
-_It is advised not to change this value unless it conflicts with one of your own session keys (which is unlikely if not directly impossible)_
-
-#### name
-
-Assigns session name, default PHP `PHPSESSID` session name will be used if none provided.
-
-> Review Important note below.
-
-#### savePath
-
-This configuration is used only if default 'files' session save handler is selected in `session.save_handler`.
-
-Assigns the path to store session files. If none provided `sys_get_temp_dir()`, `session_save_path()` and session 'name' will be used to compose a unique path.
-
-> Review Important note below.
-
-#### lifetime
-
-Number of seconds for the session to be considered valid. uses `session.gc_maxlifetime` and `session.cookie_lifetime` to discover PHP configured session lifetime if none provided. Finally it defaults to `SessionWare::SESSION_LIFETIME_DEFAULT` (24 minutes) if previous values are not available or their value is zero.
-
-There are six session lifetime constants available for convenience:
-
-* SESSION_LIFETIME_FLASH = 5 minutes
-* SESSION_LIFETIME_SHORT = 10 minutes
-* SESSION_LIFETIME_NORMAL = 15 minutes
-* SESSION_LIFETIME_DEFAULT = 24 minutes
-* SESSION_LIFETIME_EXTENDED = 1 hour
-* SESSION_LIFETIME_INFINITE = `PHP_INT_MAX`, around 1145 years on x86_64 architecture
-
-#### cookiePath, cookieDomain, cookieSecure and cookieHttpOnly
-
-Shortcuts to `session.cookie_path`, `session.cookie_domain`, `session.cookie_secure` and `session.cookie_httponly`. If not provided configured cookie params will be used, so can be set using `session_set_cookie_params()` before middleware run.
+* `\Jgut\Sessionware\Handler\Native` use PHP built-in `files` session saving
+* `\Jgut\Sessionware\Handler\Memory` an in-memory session for testing purposes
+* `\Jgut\Sessionware\Handler\Memcached` use a memcached service to save session
+* `\Jgut\Sessionware\Handler\Redis` use a Redis instance to store session
 
 ### Session
 
-There is an extra Session helper to abstract access to the $_SESSION variable. This is usefull for example when NOT accessing global variables is important for you (such as when using PHP_MD to statically analise your code)
+The session manager providing a nice OOP API to access session related actions:
 
-When using this middleware **don't** make use of any PHP built-in session handling "session_*" function but leverage `\Jgut\Middleware\Sessionware\Session` corresponding methods:
+* `Session::start()` session starting
+* `Session::isActive()` verification of active session
+* `Session::getId()` session id retrieval
+* `Session::regenerateId()` cryptographically secure session id regeneration
+* `Session::has($var)` verifying a variable is saved in session
+* `Session::set($var, $val)` saving a variable into session
+* `Session::get($var)` getting a variable from session
+* `Session::remove($var)` removing a variable from session
+* `Session::clear()` emptying session variables
+* `Session::close()` closing session saving its contents
+* `Session::destroy()` destroying session and all its contents
 
-* `Session::start()` for session starting
-* `Session::isActive()` for verification of active session
-* `Session::getId()` for session id retrieval
-* `Session::regenerateId()` for cryptographically secure session id regeneration
-* `Session::close()` for closing session saving its contents
-* `Session::destroy()` for destroying session and all its contents
-* `Session::has($var)` for verifying a variable is saved in session
-* `Session::set($var, $val)` for saving a variable into session
-* `Session::get($var)` for getting a variable from session
-* `Session::remove($var)` for removing a variable from session
-* `Session::clear()` for emptying session variables
+**Never** make use of PHP built-in session handling "session_*" function (Session object won't be in sync) or `$_SESSION` global variable (changes will be ignored and overridden).
 
-## Events
+#### Events
 
-You can listen to timeout events to perform actions accordingly. There are currently two events
+Session raise events, to which you can hook a callback to, during executing lifecycle:
 
+* `pre.session_start` triggered right before session is started
+* `post.session_start` triggered right after session has been started
+* `pre.session_regenerate_id` triggered right before session id is regenerated
+* `post.session_regenerate_id` triggered after before session id has been regenerated 
+* `pre.session_close` triggered right before session is closed
+* `post.session_close` triggered right after session has been closed
+* `pre.session_destroy` triggered right before session is destroyed
+* `post.session_destroy` triggered right after session has been destroyed
 * `pre.session_timeout` triggered right before session is wiped when session timeout is reached
 * `post.session_timeout` triggered right after session has been restarted due to session timeout
 
-Events provide sessionId as parameter:
+Events provide current Session object as parameter:
 
 ```php
-$sessionware = new SessionWare($configuration);
-$sessionware->addListener('pre.session_timeout', function($sessionId) {
-    echo sprintf('session "%s" timed out', $sessionId);
+use Jgut\Sessionware\Session
+
+$session = new Session($manager);
+$session->addListener('pre.session_close', function(Session $session) {
+    echo sprintf('session "%s" is being closed', $session->getId());
 })
-$sessionware->addListener('post.session_timeout', function($sessionId) {
-    echo sprintf('new session "%s" created', $sessionId);
+$session->addListener('post.session_close', function(Session $session) {
+    echo sprintf('new session "%s" created', $session->getId());
 })
 ```
-
-## Important note
-
-### Using default 'files' session save handler
-If you define a session 'lifetime' you **MUST** set a session 'savePath' or a session 'name' (different to `PHPSESSID`). This is to separate session files from other PHP scripts session files, for the garbage collector to handle expired files removal correctly.
-
-Be aware that if this condition is not met starting a session might remove session files from other script/application as they are all located in the same directory and there is no way for the garbage collector to tell which script/application they belong to.
-
-### Using custom session save handler
-
-Distinguishing between different script/application session files shouldn't be a problem in this case. But be carefull not to send cookie headers (`setcookie`) directly to the client but to include them in the response object instead.
-
-Register your custom session save handler *before* running this middleware to prevent savePath to be created.
 
 ## Contributing
 

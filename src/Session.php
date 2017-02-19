@@ -50,6 +50,16 @@ class Session implements EmitterAwareInterface
     }
 
     /**
+     * Get session manager.
+     *
+     * @return Manager
+     */
+    public function getManager()
+    {
+        return $this->sessionManager;
+    }
+
+    /**
      * Start session.
      *
      * @throws \RuntimeException
@@ -60,7 +70,11 @@ class Session implements EmitterAwareInterface
             return;
         }
 
+        $this->emit(Event::named('pre.session_start'), $this);
+
         $this->data = $this->sessionManager->sessionStart();
+
+        $this->emit(Event::named('post.session_start'), $this);
 
         if ($this->sessionManager->shouldRegenerateId()) {
             $this->regenerateId();
@@ -82,7 +96,11 @@ class Session implements EmitterAwareInterface
             throw new \RuntimeException('Cannot regenerate a not started session');
         }
 
+        $this->emit(Event::named('pre.session_regenerate_id'), $this);
+
         $this->sessionManager->sessionRegenerateId();
+
+        $this->emit(Event::named('pre.session_regenerate_id'), $this);
     }
 
     /**
@@ -96,7 +114,11 @@ class Session implements EmitterAwareInterface
             return;
         }
 
+        $this->emit(Event::named('pre.session_close'), $this);
+
         $this->sessionManager->sessionEnd($this->data);
+
+        $this->emit(Event::named('pre.session_close'), $this);
     }
 
     /**
@@ -110,7 +132,11 @@ class Session implements EmitterAwareInterface
             throw new \RuntimeException('Cannot destroy a not started session');
         }
 
+        $this->emit(Event::named('pre.session_destroy'), $this);
+
         $this->sessionManager->sessionDestroy();
+
+        $this->emit(Event::named('pre.session_destroy'), $this);
 
         $this->data = [];
     }
@@ -133,6 +159,18 @@ class Session implements EmitterAwareInterface
     public function getId() : string
     {
         return $this->sessionManager->getSessionId();
+    }
+
+    /**
+     * Set session identifier.
+     *
+     * @param string $sessionId
+     *
+     * @throws \RuntimeException
+     */
+    public function setId(string $sessionId)
+    {
+        $this->sessionManager->setSessionId($sessionId);
     }
 
     /**
@@ -222,31 +260,12 @@ class Session implements EmitterAwareInterface
      */
     public function clear()
     {
-        $this->data = [];
+        $timeoutKey = $this->getConfiguration()->getTimeoutKey();
+        $sessionTimeout = array_key_exists($timeoutKey, $this->data)
+            ? $this->data[$timeoutKey]
+            : time() + $this->getConfiguration()->getLifetime();
 
-        $this->setTimeout();
-
-        return $this;
-    }
-
-    /**
-     * Get session timeout time.
-     *
-     * @return int
-     */
-    public function getTimeout() : int
-    {
-        return $this->data[$this->getConfiguration()->getTimeoutKey()];
-    }
-
-    /**
-     * Set session timeout time.
-     *
-     * @return static
-     */
-    protected function setTimeout() : self
-    {
-        $this->data[$this->getConfiguration()->getTimeoutKey()] = time() + $this->getConfiguration()->getLifetime();
+        $this->data = [$timeoutKey => $sessionTimeout];
 
         return $this;
     }
@@ -258,17 +277,18 @@ class Session implements EmitterAwareInterface
      */
     protected function manageTimeout()
     {
-        $timeoutKey = $this->getConfiguration()->getTimeoutKey();
+        $configuration = $this->getConfiguration();
+        $timeoutKey = $configuration->getTimeoutKey();
 
         if (array_key_exists($timeoutKey, $this->data) && $this->data[$timeoutKey] < time()) {
-            $this->emit(Event::named('pre.session_timeout'), session_id(), $this);
+            $this->emit(Event::named('pre.session_timeout'), $this);
 
             $this->sessionManager->sessionRegenerateId();
 
-            $this->emit(Event::named('post.session_timeout'), session_id(), $this);
+            $this->emit(Event::named('post.session_timeout'), $this);
         }
 
-        $this->setTimeout();
+        $this->data[$timeoutKey] = time() + $configuration->getLifetime();
     }
 
     /**
@@ -281,9 +301,9 @@ class Session implements EmitterAwareInterface
         $configuration = $this->getConfiguration();
 
         $timeoutKey = $configuration->getTimeoutKey();
-        $expireTime = $this->has($timeoutKey)
-            ? $this->get($timeoutKey)
-            : time() - $configuration->getLifetime();
+        $expireTime = array_key_exists($timeoutKey, $this->data)
+            ? $this->data[$timeoutKey]
+            : time() + $configuration->getLifetime();
 
         return sprintf(
             '%s=%s; %s',
