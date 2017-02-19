@@ -76,7 +76,7 @@ class Memory implements Handler
      */
     public function destroy($sessionId)
     {
-        $this->data = [];
+        $this->data = 'a:0:{}';
 
         return true;
     }
