@@ -82,7 +82,7 @@ class ConfigurationTest extends TestCase
             'cookieSecure'   => true,
             'cookieHttpOnly' => true,
             'timeoutKey'     => '__CUSTOM_TIMEOUT__',
-            'encryptionKey'  => 'super_secret_key'
+            'encryptionKey'  => 'super_secret_key',
         ];
 
         $configuration = new Configuration($configs);

@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Handler;
 
-use Defuse\Crypto\Core;
 use Defuse\Crypto\Crypto;
 use Jgut\Sessionware\Configuration;
 

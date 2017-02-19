@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware;
 
-use Defuse\Crypto\Core;
 use Jgut\Sessionware\Traits\NativeSessionTrait;
 
 /**
