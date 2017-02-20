@@ -70,4 +70,44 @@ class PredisTest extends HandlerTestCase
         self::assertTrue($handler->destroy('00000000000000000000000000000000'));
         self::assertTrue($handler->gc(Configuration::LIFETIME_EXTENDED));
     }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testIgnoreWrongDecryption()
+    {
+        $configuration = $this->getMockBuilder(Configuration::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $configuration
+            ->expects(self::any())
+            ->method('getName')
+            ->will(self::returnValue('Sessionware'));
+        $configuration
+            ->expects(self::any())
+            ->method('getLifetime')
+            ->will(self::returnValue(Configuration::LIFETIME_EXTENDED));
+        $configuration
+            ->expects(self::any())
+            ->method('getEncryptionKey')
+            ->will(self::returnValue('super_secret_key'));
+        /* @var Configuration $configuration */
+
+        $sessionData = 'made_up_encryped data';
+
+        $driver = $this->getMockBuilder(Client::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $driver
+            ->expects(self::any())
+            ->method('__call')
+            ->withConsecutive(['get'], ['expire'], ['set'], ['expire'], ['del'])
+            ->will(self::onConsecutiveCalls($sessionData, true, true, true, true));
+        /* @var Client $driver */
+
+        $handler = new Predis($driver);
+        $handler->setConfiguration($configuration);
+
+        self::assertEquals(serialize([]), $handler->read('00000000000000000000000000000000'));
+    }
 }
