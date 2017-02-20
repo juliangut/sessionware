@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Jgut\Sessionware\Handler;
 
 use Defuse\Crypto\Crypto;
+use Defuse\Crypto\Exception\CryptoException;
 use Jgut\Sessionware\Configuration;
 
 /**
@@ -85,6 +86,11 @@ trait HandlerTrait
 
         $encryptionKey = str_pad($this->configuration->getEncryptionKey(), 32, '=');
 
-        return Crypto::decryptWithPassword($encryptedData, $encryptionKey);
+        try {
+            return Crypto::decryptWithPassword($encryptedData, $encryptionKey);
+        } catch (CryptoException $exception) {
+            // Ignore error and treat as empty session
+            return 'a:0:{}';
+        }
     }
 }
