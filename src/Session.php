@@ -52,6 +52,8 @@ class Session implements EmitterAwareInterface
         foreach ($initialData as $key => $value) {
             $this->set($key, $value);
         }
+
+        register_shutdown_function([$this, 'close']);
     }
 
     /**

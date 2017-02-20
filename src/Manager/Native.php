@@ -162,7 +162,6 @@ class Native implements Manager
         $this->setIniSetting('gc_maxlifetime', $this->configuration->getLifetime());
 
         session_set_save_handler($this->sessionHandler, false);
-        session_register_shutdown();
     }
 
     /**
