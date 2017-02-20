@@ -80,17 +80,23 @@ trait HandlerTrait
      */
     protected function decryptSessionData(string $encryptedData) : string
     {
-        if ($encryptedData === '' || !$this->configuration->getEncryptionKey()) {
-            return $encryptedData;
-        }
-
-        $encryptionKey = str_pad($this->configuration->getEncryptionKey(), 32, '=');
-
-        try {
-            return Crypto::decryptWithPassword($encryptedData, $encryptionKey);
-        } catch (CryptoException $exception) {
-            // Ignore error and treat as empty session
+        if ($encryptedData === '') {
             return 'a:0:{}';
         }
+
+        $plainData = $encryptedData;
+
+        if ($this->configuration->getEncryptionKey()) {
+            $encryptionKey = str_pad($this->configuration->getEncryptionKey(), 32, '=');
+
+            try {
+                $plainData = Crypto::decryptWithPassword($encryptedData, $encryptionKey);
+            } catch (CryptoException $exception) {
+                // Ignore error and treat as empty session
+                return 'a:0:{}';
+            }
+        }
+
+        return $plainData === 'b:0;' || @unserialize($plainData) !== false ? $plainData : 'a:0:{}';
     }
 }

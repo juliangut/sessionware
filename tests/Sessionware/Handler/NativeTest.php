@@ -40,6 +40,7 @@ class NativeTest extends SessionTestCase
 
         ini_set('session.gc_probability', '1');
         ini_set('session.gc_divisor', '1');
+        ini_set('session.serialize_handler', 'php_serialize');
 
         $this->handler = new Native();
     }
@@ -91,7 +92,7 @@ class NativeTest extends SessionTestCase
 
         session_write_close();
 
-        unset($_SESSION);
+        $_SESSION = null;
 
         session_start();
 

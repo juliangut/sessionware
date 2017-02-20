@@ -93,7 +93,39 @@ class PredisTest extends HandlerTestCase
             ->will(self::returnValue('super_secret_key'));
         /* @var Configuration $configuration */
 
-        $sessionData = 'made_up_encryped data';
+        $driver = $this->getMockBuilder(Client::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $driver
+            ->expects(self::any())
+            ->method('__call')
+            ->withConsecutive(['get'], ['expire'])
+            ->will(self::onConsecutiveCalls('not_really_encrypted_data', true));
+        /* @var Client $driver */
+
+        $handler = new Predis($driver);
+        $handler->setConfiguration($configuration);
+
+        self::assertEquals(serialize([]), $handler->read('00000000000000000000000000000000'));
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testIgnoreInvalidDeserialization()
+    {
+        $configuration = $this->getMockBuilder(Configuration::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $configuration
+            ->expects(self::any())
+            ->method('getName')
+            ->will(self::returnValue('Sessionware'));
+        $configuration
+            ->expects(self::any())
+            ->method('getLifetime')
+            ->will(self::returnValue(Configuration::LIFETIME_EXTENDED));
+        /* @var Configuration $configuration */
 
         $driver = $this->getMockBuilder(Client::class)
             ->disableOriginalConstructor()
@@ -101,8 +133,8 @@ class PredisTest extends HandlerTestCase
         $driver
             ->expects(self::any())
             ->method('__call')
-            ->withConsecutive(['get'], ['expire'], ['set'], ['expire'], ['del'])
-            ->will(self::onConsecutiveCalls($sessionData, true, true, true, true));
+            ->withConsecutive(['get'], ['expire'])
+            ->will(self::onConsecutiveCalls('not_really_serialized_data', true));
         /* @var Client $driver */
 
         $handler = new Predis($driver);
