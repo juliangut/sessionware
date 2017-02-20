@@ -64,6 +64,8 @@ class Memcached implements Handler
     {
         $sessionData = $this->driver->get($sessionId);
 
+        $this->driver->touch($sessionId, time() + $this->configuration->getLifetime());
+
         return $sessionData ? $this->decryptSessionData($sessionData) : 'a:0:{}';
     }
 

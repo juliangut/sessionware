@@ -47,6 +47,9 @@ class MemcachedTest extends HandlerTestCase
             ->will(self::returnValue($this->sessionData));
         $driver
             ->expects(self::any())
+            ->method('touch');
+        $driver
+            ->expects(self::any())
             ->method('set')
             ->will(self::returnValue(true));
         $driver

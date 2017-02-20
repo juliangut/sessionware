@@ -75,6 +75,7 @@ class Redis implements Handler
     public function write($sessionId, $sessionData)
     {
         $this->driver->set($sessionId, $this->encryptSessionData($sessionData));
+
         $this->driver->expire($sessionId, $this->configuration->getLifetime());
 
         return true;
