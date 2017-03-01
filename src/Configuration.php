@@ -298,7 +298,7 @@ class Configuration
             throw new \InvalidArgumentException('Session save path must be a non empty string');
         }
 
-        $this->savePath = trim($savePath);
+        $this->savePath = rtrim(trim($savePath), DIRECTORY_SEPARATOR);
 
         return $this;
     }
