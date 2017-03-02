@@ -58,6 +58,8 @@ trait HandlerTrait
      *
      * @param string $plainData
      *
+     * @throws CryptoException
+     *
      * @return string
      */
     protected function encryptSessionData(string $plainData) : string
