@@ -31,6 +31,7 @@
     "defuse/php-encryption": "^2.0",
     "friendsofphp/php-cs-fixer": "^1.12",
     "humbug/humbug": "~1.0@dev",
+    "mikey179/vfsStream": "^1.6",
     "phpmd/phpmd": "^2.0",
     "phpstan/phpstan": "~0.5",
     "phpunit/phpunit": "^5.7|6.0",
