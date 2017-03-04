@@ -68,9 +68,7 @@ trait HandlerTrait
             return $plainData;
         }
 
-        $encryptionKey = str_pad($this->configuration->getEncryptionKey(), 32, '=');
-
-        return Crypto::encryptWithPassword($plainData, $encryptionKey);
+        return Crypto::encrypt($plainData, $this->configuration->getEncryptionKey());
     }
 
     /**
@@ -89,10 +87,8 @@ trait HandlerTrait
         $plainData = $encryptedData;
 
         if ($this->configuration->getEncryptionKey()) {
-            $encryptionKey = str_pad($this->configuration->getEncryptionKey(), 32, '=');
-
             try {
-                $plainData = Crypto::decryptWithPassword($encryptedData, $encryptionKey);
+                $plainData = Crypto::decrypt($encryptedData, $this->configuration->getEncryptionKey());
             } catch (CryptoException $exception) {
                 // Ignore error and treat as empty session
                 return 'a:0:{}';
