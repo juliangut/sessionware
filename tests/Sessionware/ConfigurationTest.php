@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Tests;
 
+use Defuse\Crypto\Key;
 use Jgut\Sessionware\Configuration;
 use PHPUnit\Framework\TestCase;
 
@@ -82,7 +83,7 @@ class ConfigurationTest extends TestCase
             'cookieSecure'   => true,
             'cookieHttpOnly' => true,
             'timeoutKey'     => '__CUSTOM_TIMEOUT__',
-            'encryptionKey'  => 'super_secret_key',
+            'encryptionKey'  => Key::createNewRandomKey(),
         ];
 
         $configuration = new Configuration($configs);
@@ -123,15 +124,6 @@ class ConfigurationTest extends TestCase
     public function testInvalidLifetime()
     {
         new Configuration(['lifetime' => 0]);
-    }
-
-    /**
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage Session encryption key must be a non empty string
-     */
-    public function testInvalidEncryptionKey()
-    {
-        new Configuration(['encryptionKey' => ' ']);
     }
 
     /**

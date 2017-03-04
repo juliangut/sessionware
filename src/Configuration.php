@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware;
 
+use Defuse\Crypto\Key;
+use Defuse\Crypto\KeyOrPassword;
 use Jgut\Sessionware\Traits\NativeSessionTrait;
 
 /**
@@ -71,7 +73,7 @@ class Configuration
     protected $cookieHttpOnly;
 
     /**
-     * @var string
+     * @var Key
      */
     protected $encryptionKey;
 
@@ -336,7 +338,7 @@ class Configuration
     /**
      * Set session encryption key.
      *
-     * @return string|null
+     * @return Key|null
      */
     public function getEncryptionKey()
     {
@@ -346,18 +348,12 @@ class Configuration
     /**
      * Set session encryption key.
      *
-     * @param string $encryptionKey
-     *
-     * @throws \InvalidArgumentException
+     * @param Key $encryptionKey
      *
      * @return self
      */
-    public function setEncryptionKey(string $encryptionKey) : self
+    public function setEncryptionKey(Key $encryptionKey) : self
     {
-        if (trim($encryptionKey) === '') {
-            throw new \InvalidArgumentException('Session encryption key must be a non empty string');
-        }
-
         $this->encryptionKey = $encryptionKey;
 
         return $this;
