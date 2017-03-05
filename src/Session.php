@@ -37,7 +37,7 @@ class Session implements EmitterAwareInterface
      *
      * @var array
      */
-    protected $data = [];
+    protected $data;
 
     /**
      * Session constructor.
@@ -50,6 +50,7 @@ class Session implements EmitterAwareInterface
     public function __construct(Manager $sessionManager, array $initialData = [])
     {
         $this->sessionManager = $sessionManager;
+        $this->data = [];
 
         foreach ($initialData as $key => $value) {
             $this->set($key, $value);

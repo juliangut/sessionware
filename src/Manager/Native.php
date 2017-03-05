@@ -355,6 +355,18 @@ class Native implements Manager
     }
 
     /**
+     * Ini settings configuration helper.
+     */
+    final public function configureIniSettings()
+    {
+        $this->setIniSetting('use_trans_sid', '0');
+        $this->setIniSetting('use_cookies', '1');
+        $this->setIniSetting('use_only_cookies', '1');
+        $this->setIniSetting('use_strict_mode', '0');
+        $this->setIniSetting('cache_limiter', '');
+    }
+
+    /**
      * Generates cryptographically secure session identifier.
      *
      * @param int $length

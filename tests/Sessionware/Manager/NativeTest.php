@@ -38,17 +38,17 @@ class NativeTest extends SessionTestCase
         $this->handler = new Memory();
     }
 
-    public function testGettersSetters()
+    public function testConfigureIniSettings()
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        self::assertFalse($manager->isSessionStarted());
-        self::assertFalse($manager->isSessionDestroyed());
-        self::assertSame($this->configuration, $manager->getConfiguration());
-        self::assertEmpty($manager->getSessionId());
+        $manager->configureIniSettings();
 
-        $manager->setSessionId($this->sessionId);
-        self::assertEmpty($manager->getSessionId());
+        self::assertEquals(false, (bool) ini_get('session.use_trans_sid'));
+        self::assertEquals(true, (bool) ini_get('session.use_cookies'));
+        self::assertEquals(true, (bool) ini_get('session.use_only_cookies'));
+        self::assertEquals(false, (bool) ini_get('session.use_strict_mode'));
+        self::assertEquals('', ini_get('session.cache_limiter'));
     }
 
     /**
@@ -83,6 +83,19 @@ class NativeTest extends SessionTestCase
             ['session.use_strict_mode', '1'],
             ['session.cache_limiter', 'nocache'],
         ];
+    }
+
+    public function testGettersSetters()
+    {
+        $manager = new Native($this->configuration, $this->handler);
+
+        self::assertFalse($manager->isSessionStarted());
+        self::assertFalse($manager->isSessionDestroyed());
+        self::assertSame($this->configuration, $manager->getConfiguration());
+        self::assertEmpty($manager->getSessionId());
+
+        $manager->setSessionId($this->sessionId);
+        self::assertEmpty($manager->getSessionId());
     }
 
     /**

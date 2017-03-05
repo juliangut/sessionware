@@ -12,9 +12,9 @@
 
 # PSR7 compatible session management
 
-Encapsulates PHP session management into a nice API compatible with PSR7.
+Encapsulates session management into a nice PSR7 compatible API.
 
-Generates a 80 character long session_id using `random_bytes`, a truly cryptographically secure pseudo-random generator, instead of `session.hash_function` algorithm.
+Automatically Regenerates session identifier to a 80 character long identifier using `random_bytes`, a truly cryptographically secure pseudo-random generator, instead of `session.hash_function` algorithm.
 
 ## Installation
 
@@ -172,13 +172,11 @@ $handler = new \Jgut\Sessionware\Handler\Memcached($memcached));
 
 ### Manager
 
-The responsible of actual session management.
-
-Currently only `Native` manager exist that uses built-in PHP session capabilities.
+The responsible of actual session management. Currently only `Native` manager exist that wraps built-in PHP session management capabilities.
 
 #### Native manager
 
-Be aware that upon session start `session.serialize_handler` ini setting will be set to 'php_serialize' and `session.gc_maxlifetime` will be updated to session lifetime as defined in configuration
+Be aware that right before session start `session.serialize_handler` ini setting will be set to 'php_serialize' and `session.gc_maxlifetime` will be updated to session lifetime as defined in configuration
 
 ```php
 $configuration = new \Jgut\Sessionware\Configuration($settings);
@@ -189,13 +187,15 @@ $manager = new \Jgut\Sessionware\Manager\Native($configuration, $handler));
 
 ##### Requisites
 
-Currently in order to use Native manager some session ini settings need to be set to specific values prior to session start, otherwise it will fail to start:
+In order to use Native manager, due to how PHP handles headers when sessions are started, some ini settings need to be set to specific values prior to session start, otherwise it will fail to start:
 
 * `session.use_trans_sid` to `false`
 * `session.use_cookies` to `true`
 * `session.use_only_cookies` to `true`
 * `session.use_strict_mode` to `false`
 * `session.cache_limiter` to `''` _(empty string)_
+
+There is a helper method to configure this ini settings for you: `\Jgut\Sessionware\Manager\Native::configureIniSettings`
 
 > This values prevent session headers to be automatically sent to user by PHP itself. **It's the developer's responsibility to include corresponding cache headers in response object**, which should be the case in the first place instead of relying on PHP environment.
 
@@ -205,23 +205,26 @@ Currently in order to use Native manager some session ini settings need to be se
 
 The session manager provides a nice OOP API to access session related actions:
 
-* `Session::start()` session starting
+* `Session::setId()` assign session identifier BEFORE session is started
+* `Session::getId()` session identifier retrieval
+* `Session::start()` session start
 * `Session::isActive()` verification of active session
-* `Session::getId()` session id retrieval
-* `Session::regenerateId()` cryptographically secure session id regeneration
-* `Session::has($var)` verifying a variable is saved in session
-* `Session::set($var, $val)` saving a variable into session
-* `Session::get($var)` getting a variable from session
-* `Session::remove($var)` removing a variable from session
-* `Session::clear()` emptying session variables
+* `Session::regenerateId()` cryptographically secure session identifier regeneration
+* `Session::has($var)` verify a variable is saved in session
+* `Session::set($var, $val)` save a variable into session
+* `Session::get($var)` get a variable from session
+* `Session::remove($var)` remove a variable from session
+* `Session::clear()` remove all session variables
 * `Session::close()` close session saving its contents
-* `Session::destroy()` destroying session and all its contents
+* `Session::destroy()` destroy session and all its contents
 
 ```php
 $session = new \Jgut\Sessionware\Session($manager, ['user' => null]);
 ```
 
-**Never** make use of PHP built-in session handling "session_*" functions (Session object would end up not being in sync) or `$_SESSION` global variable (changes will be ignored and overridden).
+#### Important note!
+
+**Never** make use of PHP built-in "session_*" functions (Session object would end up not being in sync) or `$_SESSION` global variable (changes will be ignored and overridden). **Use Session object API instead**
 
 #### Events
 

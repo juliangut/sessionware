@@ -17,6 +17,17 @@ namespace Jgut\Sessionware\Traits;
 trait NativeSessionTrait
 {
     /**
+     * Set session ini setting.
+     *
+     * @param string $setting
+     * @param string $value
+     */
+    protected function setIniSetting(string $setting, string $value)
+    {
+        ini_set($this->normalizeSessionIniSetting($setting), $value);
+    }
+
+    /**
      * Get string ini setting.
      *
      * @param string $setting
@@ -68,17 +79,6 @@ trait NativeSessionTrait
     private function getIniSetting(string $setting) : string
     {
         return (string) ini_get($this->normalizeSessionIniSetting($setting));
-    }
-
-    /**
-     * Set session ini setting.
-     *
-     * @param string $setting
-     * @param mixed  $value
-     */
-    protected function setIniSetting(string $setting, $value)
-    {
-        ini_set($this->normalizeSessionIniSetting($setting), $value);
     }
 
     /**
