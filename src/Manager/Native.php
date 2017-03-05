@@ -153,13 +153,13 @@ class Native implements Manager
     protected function configureSession()
     {
         // Use better session serializer when available
-        if ($this->getIniSetting('serialize_handler') !== 'php_serialize') {
+        if ($this->getStringIniSetting('serialize_handler') !== 'php_serialize') {
             // @codeCoverageIgnoreStart
             $this->setIniSetting('serialize_handler', 'php_serialize');
             // @codeCoverageIgnoreEnd
         }
 
-        $this->setIniSetting('gc_maxlifetime', $this->configuration->getLifetime());
+        $this->setIniSetting('gc_maxlifetime', (string) $this->configuration->getLifetime());
 
         session_set_save_handler($this->sessionHandler, false);
     }

@@ -35,12 +35,15 @@ trait NativeSessionTrait
      * Get integer ini setting.
      *
      * @param string $setting
+     * @param int    $default
      *
      * @return int
      */
-    protected function getIntegerIniSetting(string $setting) : int
+    protected function getIntegerIniSetting(string $setting, int $default = 0) : int
     {
-        return (int) $this->getIniSetting($setting);
+        $setting = $this->getIniSetting($setting);
+
+        return !empty(trim($setting)) ? (int) $setting : $default;
     }
 
     /**
@@ -62,9 +65,9 @@ trait NativeSessionTrait
      *
      * @return string
      */
-    protected function getIniSetting(string $setting) : string
+    private function getIniSetting(string $setting) : string
     {
-        return ini_get($this->normalizeSessionIniSetting($setting));
+        return (string) ini_get($this->normalizeSessionIniSetting($setting));
     }
 
     /**
