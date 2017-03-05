@@ -48,6 +48,13 @@ class HandlerTraitTest extends HandlerTestCase
         $handler->testConfiguration();
     }
 
+    public function testNoEncryption()
+    {
+        $plainData = serialize(['data' => 'sessionData']);
+
+        self::assertEquals($plainData, $this->handler->encryptData($plainData));
+    }
+
     public function testDefaultDecryption()
     {
         self::assertEquals(serialize([]), $this->handler->decryptData(''));
@@ -55,15 +62,12 @@ class HandlerTraitTest extends HandlerTestCase
 
     public function testInvalidDecryption()
     {
+        $this->configuration
+            ->expects(self::any())
+            ->method('getEncryptionKey')
+            ->will(self::returnValue(Key::createNewRandomKey()));
+
         self::assertEquals(serialize([]), $this->handler->decryptData('not_really_encrypted_string'));
-    }
-
-    public function testNoEncryptionDecryption()
-    {
-        $plainData = serialize(['data' => 'sessionData']);
-        $encryptedData = $this->handler->encryptData($plainData);
-
-        self::assertEquals($plainData, $this->handler->decryptData($encryptedData));
     }
 
     public function testEncryptionDecryption()
