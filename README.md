@@ -232,16 +232,20 @@ $session = new \Jgut\Sessionware\Session($manager, ['user' => null]);
 
 Session raises events to which you can hook a callback to, during executing lifecycle:
 
-* `pre.session_start` triggered right before session is started
-* `post.session_start` triggered right after session has been started
-* `pre.session_regenerate_id` triggered right before session id is regenerated
-* `post.session_regenerate_id` triggered after before session id has been regenerated 
-* `pre.session_close` triggered right before session is closed
-* `post.session_close` triggered right after session has been closed
-* `pre.session_destroy` triggered right before session is destroyed
-* `post.session_destroy` triggered right after session has been destroyed
-* `pre.session_timeout` triggered right before session is wiped when session timeout is reached
-* `post.session_timeout` triggered right after session has been restarted due to session timeout
+* `pre.start` triggered right before session is started
+* `post.start` triggered right after session has been started
+* `pre.regenerate_id` triggered right before session id is regenerated
+* `post.regenerate_id` triggered after before session id has been regenerated
+* `pre.reset` triggered right before session is reset
+* `post.reset` triggered right after session has been reset
+* `pre.abort` triggered right before session is aborted
+* `post.abort` triggered right after session has been aborted
+* `pre.close` triggered right before session is closed
+* `post.close` triggered right after session has been closed
+* `pre.destroy` triggered right before session is destroyed
+* `post.destroy` triggered right after session has been destroyed
+* `pre.timeout` triggered right before session is wiped when session timeout is reached
+* `post.timeout` triggered right after session has been restarted due to session timeout
 
 Events provide current Session object as parameter:
 
@@ -249,10 +253,10 @@ Events provide current Session object as parameter:
 use Jgut\Sessionware\Session
 
 $session = new Session($manager);
-$session->addListener('pre.session_close', function($event, Session $session) {
+$session->addListener('pre.close', function($event, Session $session) {
     echo sprintf('Session "%s" is being closed', $session->getId());
 })
-$session->addListener('post.session_close', function($event, Session $session) {
+$session->addListener('post.close', function($event, Session $session) {
     echo sprintf('Session "%s" has been closed', $session->getId());
 })
 ```

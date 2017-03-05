@@ -374,7 +374,7 @@ class Native implements Manager
      *
      * @return string
      */
-    private function getNewSessionId($length = Configuration::SESSION_ID_LENGTH)
+    private function getNewSessionId($length = Configuration::SESSION_ID_LENGTH) : string
     {
         return substr(
             preg_replace('/[^a-zA-Z0-9-]+/', '', base64_encode(random_bytes((int) $length))),
