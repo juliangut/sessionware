@@ -185,6 +185,10 @@ class Session implements EmitterAwareInterface
      */
     public function setId(string $sessionId)
     {
+        if ($this->isActive() || $this->isDestroyed()) {
+            throw new \RuntimeException('Cannot set session id on started or destroyed sessions');
+        }
+
         $this->sessionManager->setSessionId($sessionId);
     }
 

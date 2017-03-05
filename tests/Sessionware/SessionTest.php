@@ -32,9 +32,23 @@ class SessionTest extends SessionTestCase
      */
     protected $session;
 
+    public function testCreation()
+    {
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('getConfiguration')
+            ->will(self::returnValue($this->configuration));
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
+
+        $session = new Session($manager);
+
+        self::assertEquals($manager, $session->getManager());
+    }
+
     /**
-     * @runInSeparateProcess
-     *
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Session values must be scalars, object given
      */
@@ -54,9 +68,6 @@ class SessionTest extends SessionTestCase
         $session->set('sessionKey', [new \stdClass()]);
     }
 
-    /**
-     * @runInSeparateProcess
-     */
     public function testSessionSettersGetters()
     {
         $manager = $this->getMockBuilder(Native::class)
@@ -89,9 +100,6 @@ class SessionTest extends SessionTestCase
         self::assertEquals($timeout, $session->get($this->configuration->getTimeoutKey()));
     }
 
-    /**
-     * @runInSeparateProcess
-     */
     public function testSessionStart()
     {
         $manager = $this->getMockBuilder(Native::class)
@@ -131,9 +139,6 @@ class SessionTest extends SessionTestCase
         self::assertNotEquals($timeout, $session->get($this->configuration->getTimeoutKey()));
     }
 
-    /**
-     * @runInSeparateProcess
-     */
     public function testSessionTimeout()
     {
         $manager = $this->getMockBuilder(Native::class)
@@ -173,9 +178,6 @@ class SessionTest extends SessionTestCase
         $session->start();
     }
 
-    /**
-     * @runInSeparateProcess
-     */
     public function testSessionClose()
     {
         $manager = $this->getMockBuilder(Native::class)
@@ -211,8 +213,6 @@ class SessionTest extends SessionTestCase
     }
 
     /**
-     * @runInSeparateProcess
-     *
      * @expectedException \RuntimeException
      * @expectedExceptionMessage Cannot regenerate a not started session
      */
@@ -232,9 +232,6 @@ class SessionTest extends SessionTestCase
         $session->regenerateId();
     }
 
-    /**
-     * @runInSeparateProcess
-     */
     public function testSessionRegenerateId()
     {
         $manager = $this->getMockBuilder(Native::class)
@@ -275,8 +272,6 @@ class SessionTest extends SessionTestCase
     }
 
     /**
-     * @runInSeparateProcess
-     *
      * @expectedException \RuntimeException
      * @expectedExceptionMessage Cannot destroy a not started session
      */
@@ -296,9 +291,6 @@ class SessionTest extends SessionTestCase
         $session->destroy();
     }
 
-    /**
-     * @runInSeparateProcess
-     */
     public function testSessionDestroy()
     {
         $manager = $this->getMockBuilder(Native::class)
@@ -337,9 +329,77 @@ class SessionTest extends SessionTestCase
         self::assertTrue($session->isDestroyed());
     }
 
+    public function testSessionId()
+    {
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::once())
+            ->method('setSessionId');
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
+
+        $session = new Session($manager);
+
+        $session->setId('sdfh');
+    }
+
     /**
-     * @runInSeparateProcess
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage Cannot set session id on started or destroyed sessions
      */
+    public function testSessionIdOnStartedSession()
+    {
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('isSessionStarted')
+            ->will(self::onConsecutiveCalls(false, true, true));
+        $manager
+            ->expects(self::once())
+            ->method('sessionStart')
+            ->will(self::returnValue([]));
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
+
+        $session = new Session($manager);
+
+        $session->start();
+
+        $session->setId('sdfh');
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage Cannot set session id on started or destroyed sessions
+     */
+    public function testSessionIdOnDestroyedSession()
+    {
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('isSessionStarted')
+            ->will(self::onConsecutiveCalls(false, true, true));
+        $manager
+            ->expects(self::once())
+            ->method('sessionStart')
+            ->will(self::returnValue([]));
+        $manager
+            ->expects(self::once())
+            ->method('sessionDestroy');
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
+
+        $session = new Session($manager);
+
+        $session->start();
+        $session->destroy();
+
+        $session->setId('sdfh');
+    }
+
     public function testSessionCookieString()
     {
         $sessionId = 'ch3OZUQU3J93jqFRlbC7t5zzUrXq1m8AmBj87wdaUNZMzKHb9T5sYd8iZItWFR720NfoYmAztV3Izbpt';
