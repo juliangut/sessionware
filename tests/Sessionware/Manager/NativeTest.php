@@ -182,6 +182,7 @@ class NativeTest extends SessionTestCase
         self::assertEquals('php_serialize', ini_get('session.serialize_handler'));
         self::assertSame($this->configuration->getLifetime(), (int) ini_get('session.gc_maxlifetime'));
         self::assertEquals('user', ini_get('session.save_handler'));
+        self::assertEquals('user', session_module_name());
         self::assertTrue($manager->isSessionStarted());
 
         self::assertEquals($this->configuration->getName(), session_name());
