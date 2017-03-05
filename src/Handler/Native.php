@@ -49,19 +49,19 @@ class Native extends \SessionHandler implements Handler
         $savePath = $this->configuration->getSavePath();
         $sessionName = $this->configuration->getName();
 
-        $savePathParts = explode(DIRECTORY_SEPARATOR, rtrim($savePath, DIRECTORY_SEPARATOR));
-        if ($sessionName !== Configuration::SESSION_NAME_DEFAULT && $sessionName !== array_pop($savePathParts)) {
-            $savePath .= DIRECTORY_SEPARATOR . $sessionName;
-        }
+        if ($this->isFileHandler) {
+            $savePathParts = explode(DIRECTORY_SEPARATOR, rtrim($savePath, DIRECTORY_SEPARATOR));
+            if ($sessionName !== Configuration::SESSION_NAME_DEFAULT && $sessionName !== array_pop($savePathParts)) {
+                $savePath .= DIRECTORY_SEPARATOR . $sessionName;
+            }
 
-        if ($this->isFileHandler &&
-            (!is_dir($savePath) && !@mkdir($savePath, 0777, true) && !is_dir($savePath))
-        ) {
-            // @codeCoverageIgnoreStart
-            throw new \RuntimeException(
-                sprintf('Failed to create session save path "%s", directory might be write protected', $savePath)
-            );
-            // @codeCoverageIgnoreEnd
+            if (!is_dir($savePath) && !@mkdir($savePath, 0777, true) && !is_dir($savePath)) {
+                // @codeCoverageIgnoreStart
+                throw new \RuntimeException(
+                    sprintf('Failed to create session save path "%s", directory might be write protected', $savePath)
+                );
+                // @codeCoverageIgnoreEnd
+            }
         }
 
         return parent::open($savePath, $sessionName);
@@ -72,7 +72,9 @@ class Native extends \SessionHandler implements Handler
      */
     public function read($sessionId)
     {
-        return $this->decryptSessionData(parent::read($sessionId));
+        $sessionData = parent::read($sessionId);
+
+        return $sessionData ? $this->decryptSessionData($sessionData) : serialize([]);
     }
 
     /**
