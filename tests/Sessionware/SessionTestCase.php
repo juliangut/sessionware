@@ -72,7 +72,6 @@ abstract class SessionTestCase extends TestCase
 
         $this->configuration = $configuration;
 
-        // Default PHP session length
         session_id($this->sessionId);
     }
 }

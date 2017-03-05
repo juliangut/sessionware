@@ -24,11 +24,6 @@ use Jgut\Sessionware\Tests\SessionTestCase;
 class NativeTest extends SessionTestCase
 {
     /**
-     * @var Configuration
-     */
-    protected $configuration;
-
-    /**
      * @var \Jgut\Sessionware\Handler\Handler
      */
     protected $handler;
@@ -40,24 +35,6 @@ class NativeTest extends SessionTestCase
     {
         parent::setUp();
 
-        $configuration = $this->getMockBuilder(Configuration::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $configuration
-            ->expects(self::any())
-            ->method('getName')
-            ->will(self::returnValue('Sessionware'));
-        $configuration
-            ->expects(self::any())
-            ->method('getSavePath')
-            ->will(self::returnValue(sys_get_temp_dir()));
-        $configuration
-            ->expects(self::any())
-            ->method('getLifetime')
-            ->will(self::returnValue(Configuration::LIFETIME_DEFAULT));
-        /* @var Configuration $configuration */
-
-        $this->configuration = $configuration;
         $this->handler = new Memory();
     }
 
@@ -70,7 +47,7 @@ class NativeTest extends SessionTestCase
         self::assertSame($this->configuration, $manager->getConfiguration());
         self::assertEmpty($manager->getSessionId());
 
-        $manager->setSessionId('00000000000000000000000000000000');
+        $manager->setSessionId($this->sessionId);
         self::assertEmpty($manager->getSessionId());
     }
 
@@ -134,8 +111,7 @@ class NativeTest extends SessionTestCase
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        session_start();
-
+        $manager->sessionStart();
         $manager->sessionStart();
     }
 
@@ -164,7 +140,7 @@ class NativeTest extends SessionTestCase
 
         $manager->sessionStart();
 
-        $manager->setSessionId('00000000000000000000000000000000');
+        $manager->setSessionId($this->sessionId);
     }
 
     /**
