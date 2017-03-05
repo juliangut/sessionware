@@ -23,7 +23,15 @@ class Memory implements Handler
     /**
      * @var string
      */
-    protected $data = 'a:0:{}';
+    protected $data;
+
+    /**
+     * In-memory session handler constructor.
+     */
+    public function __construct()
+    {
+        $this->data = serialize([]);
+    }
 
     /**
      * {@inheritdoc}
@@ -76,7 +84,7 @@ class Memory implements Handler
      */
     public function destroy($sessionId)
     {
-        $this->data = 'a:0:{}';
+        $this->data = serialize([]);
 
         return true;
     }

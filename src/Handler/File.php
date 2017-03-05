@@ -106,7 +106,7 @@ class File implements Handler
         $sessionFile = $this->getSessionFile($sessionId);
 
         if (!file_exists($sessionFile)) {
-            $sessionData = 'a:0:{}';
+            $sessionData = serialize([]);
 
             $this->write($sessionId, $sessionData);
 

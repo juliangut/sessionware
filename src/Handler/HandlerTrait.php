@@ -81,7 +81,7 @@ trait HandlerTrait
     protected function decryptSessionData(string $encryptedData) : string
     {
         if ($encryptedData === '') {
-            return 'a:0:{}';
+            return serialize([]);
         }
 
         $plainData = $encryptedData;
@@ -91,10 +91,10 @@ trait HandlerTrait
                 $plainData = Crypto::decrypt($encryptedData, $this->configuration->getEncryptionKey());
             } catch (CryptoException $exception) {
                 // Ignore error and treat as empty session
-                return 'a:0:{}';
+                return serialize([]);
             }
         }
 
-        return $plainData === 'b:0;' || @unserialize($plainData) !== false ? $plainData : 'a:0:{}';
+        return $plainData === 'b:0;' || @unserialize($plainData) !== false ? $plainData : serialize([]);
     }
 }
