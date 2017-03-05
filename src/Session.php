@@ -96,8 +96,6 @@ class Session implements EmitterAwareInterface
      * Regenerate session identifier keeping parameters.
      *
      * @throws \RuntimeException
-     *
-     * @SuppressWarnings(PMD.Superglobals)
      */
     public function regenerateId()
     {
@@ -114,8 +112,6 @@ class Session implements EmitterAwareInterface
 
     /**
      * Close session.
-     *
-     * @SuppressWarnings(PMD.Superglobals)
      */
     public function close()
     {

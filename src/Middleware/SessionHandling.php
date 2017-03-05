@@ -44,9 +44,9 @@ class SessionHandling
      *
      * @param ServerRequestInterface $request
      *
-     * @return Session
+     * @return Session|null
      */
-    public static function getSession(ServerRequestInterface $request) : Session
+    public static function getSession(ServerRequestInterface $request)
     {
         return $request->getAttribute(static::SESSION_KEY);
     }

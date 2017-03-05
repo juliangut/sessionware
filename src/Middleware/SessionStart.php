@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Middleware;
 
+use Jgut\Sessionware\Session;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -37,7 +38,13 @@ class SessionStart
         ResponseInterface $response,
         callable $next
     ) : ResponseInterface {
-        SessionHandling::getSession($request)->start();
+        $session = SessionHandling::getSession($request);
+
+        if (!$session instanceof Session) {
+            throw new \RuntimeException('SessionStart middleware must be run after SessionHandling middleware');
+        }
+
+        $session->start();
 
         return $next($request, $response);
     }

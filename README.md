@@ -80,8 +80,8 @@ $manager = new NativeManager(
 $session = new Session($manager);
 
 $app = new \YourMiddlewareAwareApplication();
-$app->addMiddleware(new SessionHandling($session));
 $app->addMiddleware(new SessionStart());
+$app->addMiddleware(new SessionHandling($session));
 
 // Routes
 

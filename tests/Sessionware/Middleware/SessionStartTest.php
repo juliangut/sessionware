@@ -27,7 +27,22 @@ use Zend\Diactoros\ServerRequestFactory;
  */
 class SessionStartTest extends SessionTestCase
 {
-    public function testSessionNotStarted()
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage SessionStart middleware must be run after SessionHandling middleware
+     */
+    public function testNoSessionHandlingMiddleware()
+    {
+        $middleware = new SessionStart();
+
+        $callback = function (ServerRequestInterface $request, ResponseInterface $response) {
+            return $response;
+        };
+
+        $middleware(ServerRequestFactory::fromGlobals(), new Response, $callback);
+    }
+
+    public function testSessionStart()
     {
         $session = $this->getMockBuilder(Session::class)
             ->disableOriginalConstructor()
