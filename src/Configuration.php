@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace Jgut\Sessionware;
 
 use Defuse\Crypto\Key;
-use Defuse\Crypto\KeyOrPassword;
 use Jgut\Sessionware\Traits\NativeSessionTrait;
 
 /**

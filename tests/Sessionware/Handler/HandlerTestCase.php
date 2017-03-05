@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Tests\Handler;
 
-use Jgut\Sessionware\Configuration;
 use Jgut\Sessionware\Tests\SessionTestCase;
 
 /**
@@ -22,35 +21,7 @@ use Jgut\Sessionware\Tests\SessionTestCase;
 abstract class HandlerTestCase extends SessionTestCase
 {
     /**
-     * @var Configuration
-     */
-    protected $configuration;
-
-    /**
      * @var string
      */
     protected $sessionData = 'a:1:{s:10:"sessionKey";s:11:"sessionData";}';
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setUp()
-    {
-        parent::setUp();
-
-        $configuration = $this->getMockBuilder(Configuration::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $configuration
-            ->expects(self::any())
-            ->method('getName')
-            ->will(self::returnValue('Sessionware'));
-        $configuration
-            ->expects(self::any())
-            ->method('getLifetime')
-            ->will(self::returnValue(Configuration::LIFETIME_EXTENDED));
-        /* @var Configuration $configuration */
-
-        $this->configuration = $configuration;
-    }
 }

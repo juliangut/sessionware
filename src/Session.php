@@ -44,6 +44,8 @@ class Session implements EmitterAwareInterface
      *
      * @param Manager $sessionManager
      * @param array   $initialData
+     *
+     * @throws \InvalidArgumentException
      */
     public function __construct(Manager $sessionManager, array $initialData = [])
     {

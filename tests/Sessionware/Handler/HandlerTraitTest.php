@@ -50,12 +50,12 @@ class HandlerTraitTest extends HandlerTestCase
 
     public function testDefaultDecryption()
     {
-        self::assertEquals('a:0:{}', $this->handler->decryptData(''));
+        self::assertEquals(serialize([]), $this->handler->decryptData(''));
     }
 
     public function testInvalidDecryption()
     {
-        self::assertEquals('a:0:{}', $this->handler->decryptData('not_really_encrypted_string'));
+        self::assertEquals(serialize([]), $this->handler->decryptData('not_really_encrypted_string'));
     }
 
     public function testNoEncryptionDecryption()

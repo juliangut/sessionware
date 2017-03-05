@@ -22,24 +22,47 @@ use Jgut\Sessionware\Handler\Memory;
 class MemoryTest extends HandlerTestCase
 {
     /**
-     * @runInSeparateProcess
+     * @var Memory
      */
-    public function testUse()
+    protected $handler;
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setUp()
     {
-        $configuration = $this->getMockBuilder(Configuration::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        /* @var Configuration $configuration */
+        parent::setUp();
 
-        $handler = new Memory();
-        $handler->setConfiguration($configuration);
+        $this->handler = new Memory();
+        $this->handler->setConfiguration($this->configuration);
+    }
 
-        self::assertTrue($handler->open(sys_get_temp_dir(), Configuration::SESSION_NAME_DEFAULT));
-        self::assertTrue($handler->close());
-        self::assertEquals('a:0:{}', $handler->read('00000000000000000000000000000000'));
-        self::assertTrue($handler->write('00000000000000000000000000000000', $this->sessionData));
-        self::assertEquals($this->sessionData, $handler->read('00000000000000000000000000000000'));
-        self::assertTrue($handler->destroy('00000000000000000000000000000000'));
-        self::assertTrue($handler->gc(Configuration::SESSION_NAME_DEFAULT));
+    public function testOpenClose()
+    {
+        self::assertTrue($this->handler->open('not', 'used'));
+        self::assertTrue($this->handler->close());
+    }
+
+    public function testAccessors()
+    {
+        self::assertEquals(serialize([]), $this->handler->read($this->sessionId));
+
+        self::assertTrue($this->handler->write($this->sessionId, serialize([])));
+        self::assertEquals(serialize([]), $this->handler->read($this->sessionId));
+    }
+
+    public function testDestroy()
+    {
+        $this->handler->write($this->sessionId, $this->sessionData);
+
+        self::assertTrue($this->handler->destroy($this->sessionId));
+        self::assertEquals(serialize([]), $this->handler->read($this->sessionId));
+
+        self::assertTrue($this->handler->gc(Configuration::SESSION_NAME_DEFAULT));
+    }
+
+    public function testGarbageCollector()
+    {
+        self::assertTrue($this->handler->gc(Configuration::SESSION_NAME_DEFAULT));
     }
 }

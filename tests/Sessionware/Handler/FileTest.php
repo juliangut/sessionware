@@ -24,11 +24,6 @@ use org\bovigo\vfs\vfsStream;
 class FileTest extends SessionTestCase
 {
     /**
-     * @var \Jgut\Sessionware\Handler\Handler
-     */
-    protected $handler;
-
-    /**
      * @var \org\bovigo\vfs\vfsStreamDirectory
      */
     protected $fileSystem;
@@ -39,46 +34,29 @@ class FileTest extends SessionTestCase
     protected $savePath;
 
     /**
+     * @var \Jgut\Sessionware\Handler\Handler
+     */
+    protected $handler;
+
+    /**
      * {@inheritdoc}
      */
     public function setUp()
     {
+        parent::setUp();
+
         $this->fileSystem = vfsStream::setup('root', 0777);
+        $this->savePath = $this->fileSystem->url() . '/' . $this->sessionName;
 
-        $this->savePath = $this->fileSystem->url() . '/Sessionware';
-
-        $configuration = $this->getMockBuilder(Configuration::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $configuration
-            ->expects(self::any())
-            ->method('getName')
-            ->will(self::returnValue('Sessionware'));
-        $configuration
+        $this->configuration
             ->expects(self::any())
             ->method('getSavePath')
             ->will(self::returnValue($this->fileSystem->url()));
-        $configuration
-            ->expects(self::any())
-            ->method('getLifetime')
-            ->will(self::returnValue(Configuration::LIFETIME_EXTENDED));
-        /* @var Configuration $configuration */
 
         $handler = new File('session_');
-        $handler->setConfiguration($configuration);
+        $handler->setConfiguration($this->configuration);
 
         $this->handler = $handler;
-    }
-
-    /**
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage Configuration must be set prior to use
-     */
-    public function testNoConfiguration()
-    {
-        $handler = new File();
-
-        $handler->open($this->fileSystem->url(), Configuration::SESSION_NAME_DEFAULT);
     }
 
     public function testOpenClose()
@@ -91,59 +69,54 @@ class FileTest extends SessionTestCase
 
     public function testRead()
     {
-        $sessionId = str_repeat('0', 32);
-        $sessionFile = $this->savePath . '/session_' . $sessionId;
+        $sessionFile = $this->savePath . '/session_' . $this->sessionId;
 
         $this->handler->open('not', 'used');
-        $this->handler->read($sessionId);
+        $this->handler->read($this->sessionId);
 
         self::assertFileExists($sessionFile);
-
-        $sessionData = $this->handler->read($sessionId);
-        self::assertEquals('a:0:{}', $sessionData);
-        self::assertEquals('a:0:{}', file_get_contents($sessionFile));
+        self::assertEquals(serialize([]), $this->handler->read($this->sessionId));
+        self::assertStringEqualsFile($sessionFile, serialize([]));
     }
 
     public function testWrite()
     {
-        $sessionId = str_repeat('0', 32);
         $sessionData = serialize(['sessionData' => 'data']);
-        $sessionFile = $this->savePath . '/session_' . $sessionId;
+        $sessionFile = $this->savePath . '/session_' . $this->sessionId;
 
         $this->handler->open('not', 'used');
-        $this->handler->write($sessionId, $sessionData);
+        $this->handler->write($this->sessionId, $sessionData);
 
-        self::assertFileExists($this->savePath . '/session_' . $sessionId);
-        self::assertEquals($sessionData, file_get_contents($sessionFile));
+        self::assertFileExists($sessionFile);
+        self::assertStringEqualsFile($sessionFile, $sessionData);
     }
 
-    public function testGc()
+    public function testDestroy()
+    {
+        $sessionFile = $this->savePath . '/session_' . $this->sessionId;
+        mkdir($this->savePath);
+        touch($sessionFile);
+
+        $this->handler->open('not', 'used');
+        $this->handler->destroy($this->sessionId);
+
+        self::assertFileNotExists($sessionFile);
+    }
+
+    public function testGarbageCollector()
     {
         $modTime = time() - (Configuration::LIFETIME_EXTENDED * 2);
 
-        $fileSystem = vfsStream::setup('root', 0777, ['Sessionware' => []]);
-        $sessionSavePath = $fileSystem->getChild('Sessionware');
+        $fileSystem = vfsStream::setup('root', 0777, [$this->sessionName => []]);
+        $sessionSavePath = $fileSystem->getChild($this->sessionName);
 
         $sessionSavePath->addChild(
-            vfsStream::newFile('session_' . str_repeat('1', 32))->lastModified($modTime)
+            vfsStream::newFile('session_' . $this->sessionId)->lastModified($modTime)
         );
 
         $this->handler->open('not', 'used');
         $this->handler->gc(0);
 
         self::assertEmpty($sessionSavePath->getChildren());
-    }
-
-    public function testDestroy()
-    {
-        $sessionId = str_repeat('0', 32);
-        $sessionFile = $this->savePath . '/session_' . $sessionId;
-
-        $this->handler->open('not', 'used');
-
-        $this->handler->read($sessionId);
-        $this->handler->destroy($sessionId);
-
-        self::assertFileNotExists($sessionFile);
     }
 }

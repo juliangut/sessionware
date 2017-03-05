@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Tests;
 
+use Jgut\Sessionware\Configuration;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -20,6 +21,21 @@ use PHPUnit\Framework\TestCase;
  */
 abstract class SessionTestCase extends TestCase
 {
+    /**
+     * @var string
+     */
+    protected $sessionId;
+
+    /**
+     * @var string
+     */
+    protected $sessionName;
+
+    /**
+     * @var Configuration
+     */
+    protected $configuration;
+
     /**
      * {@inheritdoc}
      */
@@ -34,7 +50,29 @@ abstract class SessionTestCase extends TestCase
         ini_set('session.gc_probability', '1');
         ini_set('session.gc_divisor', '2');
 
+        $this->sessionId = str_repeat('0', 32);
+        $this->sessionName = 'Sessionware';
+
+        $configuration = $this->getMockBuilder(Configuration::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $configuration
+            ->expects(self::any())
+            ->method('getName')
+            ->will(self::returnValue($this->sessionName));
+        $configuration
+            ->expects(self::any())
+            ->method('getLifetime')
+            ->will(self::returnValue(Configuration::LIFETIME_EXTENDED));
+        $configuration
+            ->expects(self::any())
+            ->method('getTimeoutKey')
+            ->will(self::returnValue(Configuration::TIMEOUT_KEY_DEFAULT));
+        /* @var Configuration $configuration */
+
+        $this->configuration = $configuration;
+
         // Default PHP session length
-        session_id(str_repeat('0', 32));
+        session_id($this->sessionId);
     }
 }

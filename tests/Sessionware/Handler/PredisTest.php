@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Tests\Handler;
 
-use Defuse\Crypto\Crypto;
 use Jgut\Sessionware\Configuration;
 use Jgut\Sessionware\Handler\Predis;
 use Predis\Client;
@@ -23,123 +22,67 @@ use Predis\Client;
  */
 class PredisTest extends HandlerTestCase
 {
-    /**
-     * @runInSeparateProcess
-     */
-    public function testUse()
+    public function testOpenClose()
     {
-        $configuration = $this->getMockBuilder(Configuration::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $configuration
-            ->expects(self::any())
-            ->method('getName')
-            ->will(self::returnValue('Sessionware'));
-        $configuration
-            ->expects(self::any())
-            ->method('getLifetime')
-            ->will(self::returnValue(Configuration::LIFETIME_EXTENDED));
-        $configuration
-            ->expects(self::any())
-            ->method('getEncryptionKey')
-            ->will(self::returnValue('super_secret_key'));
-        /* @var Configuration $configuration */
-
-        $sessionData = Crypto::encryptWithPassword(
-            $this->sessionData,
-            str_pad($configuration->getEncryptionKey(), 32, '=')
-        );
-
         $driver = $this->getMockBuilder(Client::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $driver
-            ->expects(self::any())
-            ->method('__call')
-            ->withConsecutive(['get'], ['expire'], ['set'], ['expire'], ['del'])
-            ->will(self::onConsecutiveCalls($sessionData, true, true, true, true));
         /* @var Client $driver */
 
         $handler = new Predis($driver);
-        $handler->setConfiguration($configuration);
+        $handler->setConfiguration($this->configuration);
 
-        self::assertTrue($handler->open(sys_get_temp_dir(), Configuration::SESSION_NAME_DEFAULT));
+        self::assertTrue($handler->open('not', 'used'));
         self::assertTrue($handler->close());
-        self::assertEquals($this->sessionData, $handler->read('00000000000000000000000000000000'));
-        self::assertTrue($handler->write('00000000000000000000000000000000', $this->sessionData));
-        self::assertTrue($handler->destroy('00000000000000000000000000000000'));
+    }
+
+    public function testAccessors()
+    {
+        $driver = $this->getMockBuilder(Client::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $driver
+            ->expects(self::any())
+            ->method('__call')
+            ->withConsecutive(['get'], ['expire'], ['set'], ['expire'])
+            ->will(self::onConsecutiveCalls($this->sessionData, true, true, true));
+        /* @var Client $driver */
+
+        $handler = new Predis($driver);
+        $handler->setConfiguration($this->configuration);
+
+        self::assertEquals($this->sessionData, $handler->read($this->sessionId));
+
+        self::assertTrue($handler->write($this->sessionId, serialize([])));
+    }
+
+    public function testDestroy()
+    {
+        $driver = $this->getMockBuilder(Client::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $driver
+            ->expects(self::any())
+            ->method('__call')
+            ->will(self::returnValue(true));
+        /* @var Client $driver */
+
+        $handler = new Predis($driver);
+        $handler->setConfiguration($this->configuration);
+
+        self::assertTrue($handler->destroy($this->sessionId));
+    }
+
+    public function testGarbageCollector()
+    {
+        $driver = $this->getMockBuilder(Client::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        /* @var Client $driver */
+
+        $handler = new Predis($driver);
+        $handler->setConfiguration($this->configuration);
+
         self::assertTrue($handler->gc(Configuration::LIFETIME_EXTENDED));
-    }
-
-    /**
-     * @runInSeparateProcess
-     */
-    public function testIgnoreWrongDecryption()
-    {
-        $configuration = $this->getMockBuilder(Configuration::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $configuration
-            ->expects(self::any())
-            ->method('getName')
-            ->will(self::returnValue('Sessionware'));
-        $configuration
-            ->expects(self::any())
-            ->method('getLifetime')
-            ->will(self::returnValue(Configuration::LIFETIME_EXTENDED));
-        $configuration
-            ->expects(self::any())
-            ->method('getEncryptionKey')
-            ->will(self::returnValue('super_secret_key'));
-        /* @var Configuration $configuration */
-
-        $driver = $this->getMockBuilder(Client::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $driver
-            ->expects(self::any())
-            ->method('__call')
-            ->withConsecutive(['get'], ['expire'])
-            ->will(self::onConsecutiveCalls('not_really_encrypted_data', true));
-        /* @var Client $driver */
-
-        $handler = new Predis($driver);
-        $handler->setConfiguration($configuration);
-
-        self::assertEquals(serialize([]), $handler->read('00000000000000000000000000000000'));
-    }
-
-    /**
-     * @runInSeparateProcess
-     */
-    public function testIgnoreInvalidDeserialization()
-    {
-        $configuration = $this->getMockBuilder(Configuration::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $configuration
-            ->expects(self::any())
-            ->method('getName')
-            ->will(self::returnValue('Sessionware'));
-        $configuration
-            ->expects(self::any())
-            ->method('getLifetime')
-            ->will(self::returnValue(Configuration::LIFETIME_EXTENDED));
-        /* @var Configuration $configuration */
-
-        $driver = $this->getMockBuilder(Client::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $driver
-            ->expects(self::any())
-            ->method('__call')
-            ->withConsecutive(['get'], ['expire'])
-            ->will(self::onConsecutiveCalls('not_really_serialized_data', true));
-        /* @var Client $driver */
-
-        $handler = new Predis($driver);
-        $handler->setConfiguration($configuration);
-
-        self::assertEquals(serialize([]), $handler->read('00000000000000000000000000000000'));
     }
 }

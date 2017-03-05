@@ -33,33 +33,6 @@ class SessionTest extends SessionTestCase
     protected $session;
 
     /**
-     * {@inheritdoc}
-     */
-    public function setUp()
-    {
-        parent::setUp();
-
-        $configuration = $this->getMockBuilder(Configuration::class)
-            ->setMethods(['getName', 'getLifetime', 'getTimeoutKey'])
-            ->getMock();
-        $configuration
-            ->expects(self::any())
-            ->method('getName')
-            ->will(self::returnValue('Sessionware'));
-        $configuration
-            ->expects(self::any())
-            ->method('getLifetime')
-            ->will(self::returnValue(Configuration::LIFETIME_DEFAULT));
-        $configuration
-            ->expects(self::any())
-            ->method('getTimeoutKey')
-            ->will(self::returnValue(Configuration::TIMEOUT_KEY_DEFAULT));
-        /* @var Configuration $configuration */
-
-        $this->configuration = $configuration;
-    }
-
-    /**
      * @runInSeparateProcess
      *
      * @expectedException \InvalidArgumentException
@@ -189,6 +162,14 @@ class SessionTest extends SessionTestCase
 
         $session = new Session($manager, [$this->configuration->getTimeoutKey() => time() - 3600]);
 
+        $unit = $this;
+        $session->addListener(
+            'pre.session_timeout',
+            function ($event, $session) use ($unit) {
+                $unit::assertInstanceOf(Session::class, $session);
+            }
+        );
+
         $session->start();
     }
 
@@ -273,7 +254,7 @@ class SessionTest extends SessionTestCase
         $manager
             ->expects(self::once())
             ->method('getSessionId')
-            ->will(self::returnValue('00000000000000000000000000000000'));
+            ->will(self::returnValue($this->sessionId));
         $manager
             ->expects(self::any())
             ->method('getConfiguration')
@@ -288,7 +269,7 @@ class SessionTest extends SessionTestCase
 
         $session->regenerateId();
 
-        self::assertEquals('00000000000000000000000000000000', $session->getId());
+        self::assertEquals($this->sessionId, $session->getId());
         self::assertTrue($session->has('saveKey'));
         self::assertEquals('savedValue', $session->get('saveKey'));
     }

@@ -23,7 +23,12 @@ use Jgut\Sessionware\Tests\SessionTestCase;
 class NativeTest extends SessionTestCase
 {
     /**
-     * @var \Jgut\Sessionware\Handler\Handler
+     * @var string
+     */
+    protected $savePath;
+
+    /**
+     * @var Native
      */
     protected $handler;
 
@@ -42,44 +47,55 @@ class NativeTest extends SessionTestCase
         ini_set('session.gc_divisor', '1');
         ini_set('session.serialize_handler', 'php_serialize');
 
-        $this->handler = new Native();
-    }
+        $this->savePath = sys_get_temp_dir() . '/' . $this->sessionName;
 
-    /**
-     * @runInSeparateProcess
-     *
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage Configuration must be set prior to use
-     */
-    public function testNoConfiguration()
-    {
-        $this->handler->open(sys_get_temp_dir(), Configuration::SESSION_NAME_DEFAULT);
-    }
-
-    /**
-     * @runInSeparateProcess
-     */
-    public function testUse()
-    {
-        $savePath = sys_get_temp_dir() . '/Sessionware';
-
-        $this->removeDir($savePath);
-
-        $configuration = $this->getMockBuilder(Configuration::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $configuration
-            ->expects(self::any())
-            ->method('getName')
-            ->will(self::returnValue('Sessionware'));
-        $configuration
+        $this->configuration
             ->expects(self::any())
             ->method('getSavePath')
             ->will(self::returnValue(sys_get_temp_dir()));
-        /* @var Configuration $configuration */
 
-        $this->handler->setConfiguration($configuration);
+        $handler = new Native();
+        $handler->setConfiguration($this->configuration);
 
+        $this->handler = $handler;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function tearDown()
+    {
+        if (!file_exists($this->savePath)) {
+            return;
+        }
+
+        foreach (array_diff(scandir($this->savePath), ['.', '..']) as $file) {
+            unlink($this->savePath . '/' . $file);
+        }
+
+        rmdir($this->savePath);
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testOpen()
+    {
+        session_register_shutdown();
+        session_set_save_handler($this->handler, false);
+
+        session_start();
+        session_abort();
+
+        self::assertFileExists($this->savePath);
+        self::assertFileExists($this->savePath . '/sess_' . $this->sessionId);
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testAccessors()
+    {
         session_register_shutdown();
         session_set_save_handler($this->handler, false);
 
@@ -87,43 +103,12 @@ class NativeTest extends SessionTestCase
 
         $_SESSION['sessionKey'] = 'sessionValue';
 
-        self::assertFileExists($savePath);
-        self::assertFileExists($savePath . '/sess_' . str_repeat('0', 32));
-
         session_write_close();
 
         $_SESSION = null;
 
         session_start();
 
-        self::assertFileExists($savePath);
-        self::assertFileExists($savePath . '/sess_' . str_repeat('0', 32));
         self::assertEquals('sessionValue', $_SESSION['sessionKey']);
-
-        $this->removeDir($savePath);
-    }
-
-    /**
-     * Recursive directory removal.
-     *
-     * @param string $path
-     */
-    private function removeDir($path)
-    {
-        if (!file_exists($path)) {
-            return;
-        }
-
-        foreach (array_diff(scandir($path), ['.', '..']) as $file) {
-            $file = $path . '/' . $file;
-
-            if (is_dir($file)) {
-                $this->removeDir($file);
-            } else {
-                unlink($file);
-            }
-        }
-
-        rmdir($path);
     }
 }

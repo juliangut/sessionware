@@ -33,27 +33,53 @@ class MemcachedTest extends HandlerTestCase
         parent::setUp();
     }
 
-    /**
-     * @runInSeparateProcess
-     */
-    public function testUse()
+    public function testOpenClose()
+    {
+        $driver = $this->getMockBuilder(\Memcached::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        /* @var \Memcached $driver */
+
+        $handler = new Memcached($driver);
+        $handler->setConfiguration($this->configuration);
+
+        self::assertTrue($handler->open('not', 'used'));
+        self::assertTrue($handler->close());
+    }
+
+    public function testAccessors()
     {
         $driver = $this->getMockBuilder(\Memcached::class)
             ->disableOriginalConstructor()
             ->getMock();
         $driver
-            ->expects(self::any())
+            ->expects(self::once())
             ->method('get')
             ->will(self::returnValue($this->sessionData));
         $driver
-            ->expects(self::any())
+            ->expects(self::once())
             ->method('touch');
         $driver
-            ->expects(self::any())
+            ->expects(self::once())
             ->method('set')
             ->will(self::returnValue(true));
+        /* @var \Memcached $driver */
+
+        $handler = new Memcached($driver);
+        $handler->setConfiguration($this->configuration);
+
+        self::assertEquals($this->sessionData, $handler->read($this->sessionId));
+
+        self::assertTrue($handler->write($this->sessionId, serialize([])));
+    }
+
+    public function testDestroy()
+    {
+        $driver = $this->getMockBuilder(\Memcached::class)
+            ->disableOriginalConstructor()
+            ->getMock();
         $driver
-            ->expects(self::any())
+            ->expects(self::once())
             ->method('delete')
             ->will(self::returnValue(true));
         /* @var \Memcached $driver */
@@ -61,11 +87,20 @@ class MemcachedTest extends HandlerTestCase
         $handler = new Memcached($driver);
         $handler->setConfiguration($this->configuration);
 
-        self::assertTrue($handler->open(sys_get_temp_dir(), Configuration::SESSION_NAME_DEFAULT));
-        self::assertTrue($handler->close());
-        self::assertEquals($this->sessionData, $handler->read('00000000000000000000000000000000'));
-        self::assertTrue($handler->write('00000000000000000000000000000000', $this->sessionData));
-        self::assertTrue($handler->destroy('00000000000000000000000000000000'));
+        self::assertTrue($handler->destroy($this->sessionId));
+        self::assertTrue($handler->gc(Configuration::LIFETIME_EXTENDED));
+    }
+
+    public function testGarbageCollector()
+    {
+        $driver = $this->getMockBuilder(\Memcached::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        /* @var \Memcached $driver */
+
+        $handler = new Memcached($driver);
+        $handler->setConfiguration($this->configuration);
+
         self::assertTrue($handler->gc(Configuration::LIFETIME_EXTENDED));
     }
 }

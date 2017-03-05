@@ -33,27 +33,53 @@ class RedisTest extends HandlerTestCase
         parent::setUp();
     }
 
-    /**
-     * @runInSeparateProcess
-     */
-    public function testUse()
+    public function testOpenClose()
+    {
+        $driver = $this->getMockBuilder(\Redis::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        /* @var \Redis $driver */
+
+        $handler = new Redis($driver);
+        $handler->setConfiguration($this->configuration);
+
+        self::assertTrue($handler->open('not', 'used'));
+        self::assertTrue($handler->close());
+    }
+
+    public function testAccessors()
     {
         $driver = $this->getMockBuilder(\Redis::class)
             ->disableOriginalConstructor()
             ->getMock();
         $driver
-            ->expects(self::any())
-            ->method('expire');
-        $driver
-            ->expects(self::any())
+            ->expects(self::once())
             ->method('get')
             ->will(self::returnValue($this->sessionData));
         $driver
-            ->expects(self::any())
+            ->expects(self::once())
             ->method('set')
             ->will(self::returnValue(true));
         $driver
-            ->expects(self::any())
+            ->expects(self::exactly(2))
+            ->method('expire');
+        /* @var \Redis $driver */
+
+        $handler = new Redis($driver);
+        $handler->setConfiguration($this->configuration);
+
+        self::assertEquals($this->sessionData, $handler->read($this->sessionId));
+
+        self::assertTrue($handler->write($this->sessionId, serialize([])));
+    }
+
+    public function testDestroy()
+    {
+        $driver = $this->getMockBuilder(\Redis::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $driver
+            ->expects(self::once())
             ->method('del')
             ->will(self::returnValue(true));
         /* @var \Redis $driver */
@@ -61,11 +87,19 @@ class RedisTest extends HandlerTestCase
         $handler = new Redis($driver);
         $handler->setConfiguration($this->configuration);
 
-        self::assertTrue($handler->open(sys_get_temp_dir(), Configuration::SESSION_NAME_DEFAULT));
-        self::assertTrue($handler->close());
-        self::assertEquals($this->sessionData, $handler->read('00000000000000000000000000000000'));
-        self::assertTrue($handler->write('00000000000000000000000000000000', $this->sessionData));
-        self::assertTrue($handler->destroy('00000000000000000000000000000000'));
+        self::assertTrue($handler->destroy($this->sessionId));
+    }
+
+    public function testGarbageCollector()
+    {
+        $driver = $this->getMockBuilder(\Redis::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        /* @var \Redis $driver */
+
+        $handler = new Redis($driver);
+        $handler->setConfiguration($this->configuration);
+
         self::assertTrue($handler->gc(Configuration::LIFETIME_EXTENDED));
     }
 }
