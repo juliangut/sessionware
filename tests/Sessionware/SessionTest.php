@@ -198,10 +198,6 @@ class SessionTest extends SessionTestCase
         $manager
             ->expects(self::once())
             ->method('sessionEnd');
-        $manager
-            ->expects(self::any())
-            ->method('getConfiguration')
-            ->will(self::returnValue($this->configuration));
         /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
         $session = new Session($manager);
@@ -252,10 +248,6 @@ class SessionTest extends SessionTestCase
             ->expects(self::once())
             ->method('getSessionId')
             ->will(self::returnValue($this->sessionId));
-        $manager
-            ->expects(self::any())
-            ->method('getConfiguration')
-            ->will(self::returnValue($this->configuration));
         /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
         $session = new Session($manager);
@@ -269,6 +261,67 @@ class SessionTest extends SessionTestCase
         self::assertEquals($this->sessionId, $session->getId());
         self::assertTrue($session->has('saveKey'));
         self::assertEquals('savedValue', $session->get('saveKey'));
+    }
+
+    public function testSessionReset()
+    {
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('isSessionStarted')
+            ->will(self::onConsecutiveCalls(false, true, false));
+        $manager
+            ->expects(self::once())
+            ->method('sessionStart')
+            ->will(self::returnValue([]));
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
+
+        $session = new Session($manager, ['initial' => 'data']);
+
+        $session->start();
+
+        $session->set('other', 'data');
+
+        self::assertEquals('data', $session->get('initial'));
+        self::assertEquals('data', $session->get('other'));
+
+        $session->reset();
+
+        self::assertEquals('data', $session->get('initial'));
+        self::assertNull($session->get('other'));
+
+        $session->reset();
+    }
+
+    public function testSessionAbort()
+    {
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('isSessionStarted')
+            ->will(self::onConsecutiveCalls(false, true, false));
+        $manager
+            ->expects(self::once())
+            ->method('sessionStart')
+            ->will(self::returnValue([]));
+        $manager
+            ->expects(self::once())
+            ->method('sessionEnd')
+            ->with(['initial' => 'data']);
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
+
+        $session = new Session($manager, ['initial' => 'data']);
+
+        $session->start();
+
+        $session->set('other', 'data');
+
+        $session->abort();
+        $session->abort();
     }
 
     /**

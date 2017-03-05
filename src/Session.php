@@ -33,6 +33,13 @@ class Session implements EmitterAwareInterface
     protected $sessionManager;
 
     /**
+     * Session initial data.
+     *
+     * @var array
+     */
+    protected $originalData;
+
+    /**
      * Session data.
      *
      * @var array
@@ -55,6 +62,8 @@ class Session implements EmitterAwareInterface
         foreach ($initialData as $key => $value) {
             $this->set($key, $value);
         }
+
+        $this->originalData = $this->data;
 
         register_shutdown_function([$this, 'close']);
     }
@@ -82,7 +91,7 @@ class Session implements EmitterAwareInterface
 
         $this->emit(Event::named('pre.session_start'), $this);
 
-        $this->data = array_merge($this->data, $this->sessionManager->sessionStart());
+        $this->originalData = $this->data = array_merge($this->data, $this->sessionManager->sessionStart());
 
         if ($this->sessionManager->shouldRegenerateId()) {
             $this->regenerateId();
@@ -109,6 +118,38 @@ class Session implements EmitterAwareInterface
         $this->sessionManager->sessionRegenerateId();
 
         $this->emit(Event::named('pre.session_regenerate_id'), $this);
+    }
+
+    /**
+     * Revert session to its original data.
+     */
+    public function reset()
+    {
+        if (!$this->isActive()) {
+            return;
+        }
+
+        $this->emit(Event::named('pre.session_reset'), $this);
+
+        $this->data = $this->originalData;
+
+        $this->emit(Event::named('pre.session_reset'), $this);
+    }
+
+    /**
+     * Close session keeping original session data.
+     */
+    public function abort()
+    {
+        if (!$this->isActive()) {
+            return;
+        }
+
+        $this->emit(Event::named('pre.session_abort'), $this);
+
+        $this->sessionManager->sessionEnd($this->originalData);
+
+        $this->emit(Event::named('pre.session_abort'), $this);
     }
 
     /**
@@ -144,7 +185,7 @@ class Session implements EmitterAwareInterface
 
         $this->emit(Event::named('pre.session_destroy'), $this);
 
-        $this->data = [];
+        $this->originalData = $this->data = [];
     }
 
     /**

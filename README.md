@@ -215,6 +215,8 @@ The session manager provides a nice OOP API to access session related actions:
 * `Session::get($var)` get a variable from session
 * `Session::remove($var)` remove a variable from session
 * `Session::clear()` remove all session variables
+* `Session::reset()` Revert session to its original data
+* `Session::abort()` Close session keeping original data
 * `Session::close()` close session saving its contents
 * `Session::destroy()` destroy session and all its contents
 
