@@ -91,6 +91,8 @@ $app->run();
 ### Configuration
 
 ```php
+use Defuse\Crypto\Key;
+
 $configuration = new Configuration([
   'name' => 'Sessionware',
   'savePath' => '/tmp/Sessionware',
@@ -99,7 +101,7 @@ $configuration = new Configuration([
   'cookiePath' => '/',
   'cookieSecure' => false,
   'cookieHttpOnly' => true,
-  'encryptionKey' => 'super_secret_encryption_key',
+  'encryptionKey' => Key::loadFromAsciiSafeString('...'),
   'timeoutKey' => '__SESSIONWARE_TIMEOUT_TIMESTAMP__',
 ]);
 ```
@@ -154,9 +156,11 @@ _It is advised not to change this value unless it conflicts with one of your own
 
 Handlers are only used with Native manager and are a replacement for `session.save_handler` ini setting. It allows for the selection of several ways of persisting session data:
 
-* `\Jgut\Sessionware\Handler\Native` use PHP built-in `files` session saving
+* `\Jgut\Sessionware\Handler\File` use a blocking filesystem to store session
+* `\Jgut\Sessionware\Handler\Memcached` use a Memcached service to save session
 * `\Jgut\Sessionware\Handler\Memory` an in-memory session for testing purposes
-* `\Jgut\Sessionware\Handler\Memcached` use a memcached service to save session
+* `\Jgut\Sessionware\Handler\Native` use PHP built-in `files` session saving
+* `\Jgut\Sessionware\Handler\Predis` use a Predis Client instance to store session
 * `\Jgut\Sessionware\Handler\Redis` use a Redis instance to store session
 
 ```php
@@ -197,7 +201,7 @@ Currently in order to use Native manager some session ini settings need to be se
 
 ### Session
 
-> Be aware that only scalar values allowed as session variables, object serialization is cumbersome
+> Be aware that only scalar values are allowed as session variables. Object serialization is cumbersome and thus it's left to the user
 
 The session manager provides a nice OOP API to access session related actions:
 
@@ -210,18 +214,18 @@ The session manager provides a nice OOP API to access session related actions:
 * `Session::get($var)` getting a variable from session
 * `Session::remove($var)` removing a variable from session
 * `Session::clear()` emptying session variables
-* `Session::close()` closing session saving its contents
+* `Session::close()` close session saving its contents
 * `Session::destroy()` destroying session and all its contents
 
 ```php
 $session = new \Jgut\Sessionware\Session($manager, ['user' => null]);
 ```
 
-**Never** make use of PHP built-in session handling "session_*" function (Session object would end up not being in sync) or `$_SESSION` global variable (changes will be ignored and overridden).
+**Never** make use of PHP built-in session handling "session_*" functions (Session object would end up not being in sync) or `$_SESSION` global variable (changes will be ignored and overridden).
 
 #### Events
 
-Session raise events, to which you can hook a callback to, during executing lifecycle:
+Session raises events to which you can hook a callback to, during executing lifecycle:
 
 * `pre.session_start` triggered right before session is started
 * `post.session_start` triggered right after session has been started
@@ -240,11 +244,11 @@ Events provide current Session object as parameter:
 use Jgut\Sessionware\Session
 
 $session = new Session($manager);
-$session->addListener('pre.session_close', function(Session $session) {
-    echo sprintf('session "%s" is being closed', $session->getId());
+$session->addListener('pre.session_close', function($event, Session $session) {
+    echo sprintf('Session "%s" is being closed', $session->getId());
 })
-$session->addListener('post.session_close', function(Session $session) {
-    echo sprintf('new session "%s" created', $session->getId());
+$session->addListener('post.session_close', function($event, Session $session) {
+    echo sprintf('Session "%s" has been closed', $session->getId());
 })
 ```
 

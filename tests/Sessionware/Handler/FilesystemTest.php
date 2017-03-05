@@ -14,14 +14,14 @@ declare(strict_types=1);
 namespace Jgut\Sessionware\Tests\Handler;
 
 use Jgut\Sessionware\Configuration;
-use Jgut\Sessionware\Handler\File;
+use Jgut\Sessionware\Handler\Filesystem;
 use Jgut\Sessionware\Tests\SessionTestCase;
 use org\bovigo\vfs\vfsStream;
 
 /**
- * File session handler test class.
+ * Filesystem session handler test class.
  */
-class FileTest extends SessionTestCase
+class FilesystemTest extends SessionTestCase
 {
     /**
      * @var \org\bovigo\vfs\vfsStreamDirectory
@@ -53,7 +53,7 @@ class FileTest extends SessionTestCase
             ->method('getSavePath')
             ->will(self::returnValue($this->fileSystem->url()));
 
-        $handler = new File('session_');
+        $handler = new Filesystem('session_');
         $handler->setConfiguration($this->configuration);
 
         $this->handler = $handler;

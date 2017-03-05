@@ -16,9 +16,9 @@ namespace Jgut\Sessionware\Handler;
 use Jgut\Sessionware\Configuration;
 
 /**
- * File session handler.
+ * Filesystem session handler.
  */
-class File implements Handler
+class Filesystem implements Handler
 {
     use HandlerTrait;
 
