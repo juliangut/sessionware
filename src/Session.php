@@ -410,6 +410,8 @@ class Session implements EmitterAwareInterface
             $cookieParams[] = 'httponly';
         }
 
+        $cookieParams[] = 'SameSite=' . $configuration->getCookieSameSite();
+
         return implode('; ', $cookieParams);
     }
 

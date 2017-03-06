@@ -10,11 +10,13 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/juliangut/sessionware.svg?style=flat-square)](https://packagist.org/packages/juliangut/sessionware/stats)
 [![Monthly Downloads](https://img.shields.io/packagist/dm/juliangut/sessionware.svg?style=flat-square)](https://packagist.org/packages/juliangut/sessionware/stats)
 
-# PSR7 compatible session management
+# Modern PSR7 compatible session management
 
-Encapsulates session management into a nice PSR7 compatible API.
+Encapsulates session management into a nice API compatible with PSR7.
 
 Automatically Regenerates session identifier to a 80 character long identifier using `random_bytes`, a truly cryptographically secure pseudo-random generator, instead of `session.hash_function` algorithm.
+
+Return cookie header string ready to be included into response object. Adds new "SameSite" restriction attribute to [prevent CSRF attacks](https://www.owasp.org/index.php/SameSite).
 
 ## Installation
 
@@ -55,6 +57,9 @@ $session->start();
 $session->set('sessionKey', 'value');
 
 $session->close();
+
+// Session cookie is not automatically set
+header('Set-Cookie', $session->getCookieString());
 ```
 
 Integrated on a Middleware workflow:
@@ -133,9 +138,13 @@ There are six session lifetime constants available for convenience:
 * `Session::SESSION_LIFETIME_EXTENDED` = 1 hour
 * `Session::SESSION_LIFETIME_INFINITE` = `PHP_INT_MAX`, around 1145 years on x86_64 architecture
 
-#### cookiePath, cookieDomain, cookieSecure and cookieHttpOnly
+#### cookieSameSite, cookiePath, cookieDomain, cookieSecure and cookieHttpOnly
 
-Configure session cookie parameters. Defaults to PHP session cookie `session.cookie_path`, `session.cookie_domain`, `session.cookie_secure` and `session.cookie_httponly` respectively  if not provided.
+Configure session cookie attributes.
+
+`cookieSameSite` configures session cookie SameSite restriction attribute to prevent CSRF attacks. Is set to "lax" by default.
+
+`cookiePath`, `cookieDomain`, `cookieSecure` and `cookieHttpOnly` defaults to default PHP session cookie ini configurations `session.cookie_path`, `session.cookie_domain`, `session.cookie_secure` and `session.cookie_httponly` respectively.
 
 #### encryptionKey
 

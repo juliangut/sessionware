@@ -465,6 +465,7 @@ class SessionTest extends SessionTestCase
                 'cookieDomain' => 'localhost',
                 'cookieSecure' => true,
                 'cookieHttpOnly' => true,
+                'cookieSameSite' => Configuration::SAME_SITE_STRICT,
             ]
         );
 
@@ -491,5 +492,6 @@ class SessionTest extends SessionTestCase
         self::assertSame(strpos($cookieHeader, 'domain='), false);
         self::assertNotSame(strpos($cookieHeader, 'secure'), false);
         self::assertNotSame(strpos($cookieHeader, 'httponly'), false);
+        self::assertNotSame(strpos($cookieHeader, 'SameSite=' . $configuration->getCookieSameSite()), false);
     }
 }

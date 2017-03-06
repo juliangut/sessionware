@@ -23,18 +23,20 @@ class Configuration
 {
     use NativeSessionTrait;
 
+    const SESSION_ID_LENGTH = 80;
+    const SESSION_NAME_DEFAULT = 'PHPSESSID';
+    const TIMEOUT_KEY_DEFAULT = '__SESSIONWARE_TIMEOUT__';
+
+    const SAME_SITE_LAX = 'Lax';
+    const SAME_SITE_STRICT = 'Strict';
+
     const LIFETIME_FLASH    = 300; // 5 minutes
     const LIFETIME_SHORT    = 600; // 10 minutes
     const LIFETIME_NORMAL   = 900; // 15 minutes
     const LIFETIME_DEFAULT  = 1440; // 24 minutes
     const LIFETIME_EXTENDED = 3600; // 1 hour
+
     const LIFETIME_INFINITE = PHP_INT_MAX; // Around 1145 years (x86_64)
-
-    const TIMEOUT_KEY_DEFAULT = '__SESSIONWARE_TIMEOUT__';
-
-    const SESSION_NAME_DEFAULT = 'PHPSESSID';
-
-    const SESSION_ID_LENGTH = 80;
 
     /**
      * @var string
@@ -70,6 +72,11 @@ class Configuration
      * @var bool
      */
     protected $cookieHttpOnly;
+
+    /**
+     * @var string
+     */
+    protected $cookieSameSite;
 
     /**
      * @var Key
@@ -116,6 +123,7 @@ class Configuration
             'cookieDomain'   => $this->getStringIniSetting('cookie_domain'),
             'cookieSecure'   => $this->hasBoolIniSetting('cookie_secure'),
             'cookieHttpOnly' => $this->hasBoolIniSetting('cookie_httponly'),
+            'cookieSameSite' => static::SAME_SITE_LAX,
             'timeoutKey'     => static::TIMEOUT_KEY_DEFAULT,
         ];
     }
@@ -129,14 +137,15 @@ class Configuration
     {
         $configs = [
             'name',
+            'savePath',
+            'lifetime',
             'cookiePath',
             'cookieDomain',
             'cookieSecure',
             'cookieHttpOnly',
-            'savePath',
-            'lifetime',
-            'encryptionKey',
+            'cookieSameSite',
             'timeoutKey',
+            'encryptionKey',
         ];
 
         foreach ($configs as $config) {
@@ -272,6 +281,34 @@ class Configuration
         $this->cookieHttpOnly = $cookieHttpOnly;
 
         return $this;
+    }
+
+    /**
+     * Get cookie SameSite restriction.
+     *
+     * @return string
+     */
+    public function getCookieSameSite(): string
+    {
+        return $this->cookieSameSite;
+    }
+
+    /**
+     * Set cookie SameSite restriction.
+     *
+     * @param string $cookieSameSite
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function setCookieSameSite(string $cookieSameSite)
+    {
+        if (!in_array($cookieSameSite, [static::SAME_SITE_LAX, static::SAME_SITE_STRICT])) {
+            throw new \InvalidArgumentException(
+                sprintf('"%s" is not a valid cookie SameSite restriction value', $cookieSameSite)
+            );
+        }
+
+        $this->cookieSameSite = $cookieSameSite;
     }
 
     /**

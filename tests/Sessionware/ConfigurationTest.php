@@ -82,6 +82,7 @@ class ConfigurationTest extends TestCase
             'cookieDomain'   => 'example.com',
             'cookieSecure'   => true,
             'cookieHttpOnly' => true,
+            'cookieSameSite' => Configuration::SAME_SITE_STRICT,
             'timeoutKey'     => '__CUSTOM_TIMEOUT__',
             'encryptionKey'  => Key::createNewRandomKey(),
         ];
@@ -95,6 +96,7 @@ class ConfigurationTest extends TestCase
         self::assertEquals($configs['cookieDomain'], $configuration->getCookieDomain());
         self::assertTrue($configuration->isCookieSecure());
         self::assertTrue($configuration->isCookieHttpOnly());
+        self::assertEquals($configs['cookieSameSite'], $configuration->getCookieSameSite());
         self::assertEquals($configs['encryptionKey'], $configuration->getEncryptionKey());
         self::assertEquals($configs['timeoutKey'], $configuration->getTimeoutKey());
     }
@@ -124,6 +126,15 @@ class ConfigurationTest extends TestCase
     public function testInvalidLifetime()
     {
         new Configuration(['lifetime' => 0]);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage "unknown" is not a valid cookie SameSite restriction value
+     */
+    public function testInvalidCookieSameSite()
+    {
+        new Configuration(['cookieSameSite' => 'unknown']);
     }
 
     /**
