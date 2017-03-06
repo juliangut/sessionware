@@ -169,8 +169,8 @@ class Configuration
      */
     public function setName(string $name)
     {
-        if (trim($name) === '') {
-            throw new \InvalidArgumentException('Session name must be a non empty string');
+        if (empty(trim($name)) || !preg_match('/^[a-zA-Z0-9._-]+$/', $name)) {
+            throw new \InvalidArgumentException('Session name must be a non empty valid string');
         }
 
         $this->name = $name;

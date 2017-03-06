@@ -101,11 +101,11 @@ class ConfigurationTest extends TestCase
 
     /**
      * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage Session name must be a non empty string
+     * @expectedExceptionMessage Session name must be a non empty valid string
      */
     public function testInvalidName()
     {
-        new Configuration(['name' => ' ']);
+        new Configuration(['name' => '=//not_valid_session_name//=']);
     }
 
     /**
