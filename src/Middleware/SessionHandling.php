@@ -67,20 +67,14 @@ class SessionHandling
         ResponseInterface $response,
         callable $next
     ) : ResponseInterface {
-        $requestCookies = $request->getCookieParams();
-        $sessionName = $this->session->getManager()->getConfiguration()->getName();
-        if (array_key_exists($sessionName, $requestCookies) && !empty($requestCookies[$sessionName])) {
-            $this->session->setId($requestCookies[$sessionName]);
-        }
+        $this->session->loadIdFromRequest($request);
 
         /* @var ResponseInterface $response */
         $response = $next($request->withAttribute(static::SESSION_KEY, $this->session), $response);
 
-        if (!empty($this->session->getId()) && !$this->session->isDestroyed()) {
-            $response = $response->withAddedHeader('Set-Cookie', $this->session->getCookieString());
-        }
-
         $this->session->close();
+
+        $response = $this->session->withSessionCookie($response);
 
         return $response;
     }

@@ -95,7 +95,7 @@ class NativeTest extends SessionTestCase
         self::assertEmpty($manager->getSessionId());
 
         $manager->setSessionId($this->sessionId);
-        self::assertEmpty($manager->getSessionId());
+        self::assertEquals($this->sessionId, $manager->getSessionId());
     }
 
     /**

@@ -82,6 +82,10 @@ class SessionHandlingTest extends SessionTestCase
             ->expects(self::any())
             ->method('isCookieHttpOnly')
             ->will(self::returnValue(true));
+        $configuration
+            ->expects(self::any())
+            ->method('getCookieSameSite')
+            ->will(self::returnValue('Strict'));
         /* @var Configuration $configuration */
 
         $this->configuration = $configuration;
@@ -160,5 +164,6 @@ class SessionHandlingTest extends SessionTestCase
         self::assertNotSame(strpos($cookieHeader, 'domain=' . $this->configuration->getCookieDomain()), false);
         self::assertNotSame(strpos($cookieHeader, 'secure'), false);
         self::assertNotSame(strpos($cookieHeader, 'httponly'), false);
+        self::assertNotSame(strpos($cookieHeader, 'SameSite=' . $this->configuration->getCookieSameSite()), false);
     }
 }

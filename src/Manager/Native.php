@@ -93,7 +93,7 @@ class Native implements Manager
      */
     public function getSessionId() : string
     {
-        return $this->sessionStarted ? $this->sessionId : '';
+        return !empty($this->sessionId) ? $this->sessionId : '';
     }
 
     /**
@@ -172,7 +172,7 @@ class Native implements Manager
      */
     final protected function initializeSession()
     {
-        if ($this->sessionId) {
+        if (!empty($this->sessionId)) {
             session_id($this->sessionId);
         }
 
@@ -186,7 +186,7 @@ class Native implements Manager
             // @codeCoverageIgnoreEnd
         }
 
-        if (!$this->sessionId) {
+        if (empty($this->sessionId)) {
             $this->sessionId = session_id();
         }
     }

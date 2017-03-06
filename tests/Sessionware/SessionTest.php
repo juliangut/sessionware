@@ -484,7 +484,7 @@ class SessionTest extends SessionTestCase
 
         $session = new Session($manager);
 
-        $cookieHeader = $session->getCookieString();
+        $cookieHeader = $session->getSessionCookieString();
 
         self::assertSame(strpos($cookieHeader, $configuration->getName() . '=' . $sessionId), 0);
         self::assertNotSame(strpos($cookieHeader, 'max-age=' . $configuration->getLifetime()), false);

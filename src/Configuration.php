@@ -414,7 +414,7 @@ class Configuration
      *
      * @return self
      */
-    public function setTimeoutKey(string $timeoutKey)
+    public function setTimeoutKey(string $timeoutKey) : self
     {
         if (trim($timeoutKey) === '') {
             throw new \InvalidArgumentException('Session timeout key must be a non empty string');

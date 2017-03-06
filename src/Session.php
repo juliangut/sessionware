@@ -17,6 +17,8 @@ use Jgut\Sessionware\Manager\Manager;
 use League\Event\EmitterAwareInterface;
 use League\Event\EmitterTrait;
 use League\Event\Event;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Session helper.
@@ -219,6 +221,23 @@ class Session implements EmitterAwareInterface
     }
 
     /**
+     * Load session identifier from request.
+     *
+     * @param ServerRequestInterface $request
+     *
+     * @throws \RuntimeException
+     */
+    public function loadIdFromRequest(ServerRequestInterface $request)
+    {
+        $requestCookies = $request->getCookieParams();
+        $sessionName = $this->getConfiguration()->getName();
+
+        if (array_key_exists($sessionName, $requestCookies) && !empty($requestCookies[$sessionName])) {
+            $this->setId($requestCookies[$sessionName]);
+        }
+    }
+
+    /**
      * Set session identifier.
      *
      * @param string $sessionId
@@ -353,11 +372,27 @@ class Session implements EmitterAwareInterface
     }
 
     /**
+     * Return response with added session cookie.
+     *
+     * @param ResponseInterface $response
+     *
+     * @return ResponseInterface
+     */
+    public function withSessionCookie(ResponseInterface $response) : ResponseInterface
+    {
+        if (!empty($this->getId()) && !$this->isDestroyed()) {
+            $response = $response->withAddedHeader('Set-Cookie', $this->getSessionCookieString());
+        }
+
+        return $response;
+    }
+
+    /**
      * Get cookie header content.
      *
      * @return string
      */
-    public function getCookieString() : string
+    public function getSessionCookieString() : string
     {
         $configuration = $this->getConfiguration();
 
