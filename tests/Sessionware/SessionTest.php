@@ -462,7 +462,7 @@ class SessionTest extends SessionTestCase
                 'name' => 'Sessionware',
                 'lifetime' => Configuration::LIFETIME_FLASH,
                 'cookiePath' => '/home',
-                'cookieDomain' => 'example.com',
+                'cookieDomain' => 'localhost',
                 'cookieSecure' => true,
                 'cookieHttpOnly' => true,
             ]
@@ -488,7 +488,7 @@ class SessionTest extends SessionTestCase
         self::assertSame(strpos($cookieHeader, $configuration->getName() . '=' . $sessionId), 0);
         self::assertNotSame(strpos($cookieHeader, 'max-age=' . $configuration->getLifetime()), false);
         self::assertNotSame(strpos($cookieHeader, 'path=' . $configuration->getCookiePath()), false);
-        self::assertNotSame(strpos($cookieHeader, 'domain=' . $configuration->getCookieDomain()), false);
+        self::assertSame(strpos($cookieHeader, 'domain='), false);
         self::assertNotSame(strpos($cookieHeader, 'secure'), false);
         self::assertNotSame(strpos($cookieHeader, 'httponly'), false);
     }

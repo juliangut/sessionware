@@ -397,8 +397,9 @@ class Session implements EmitterAwareInterface
             $cookieParams[] = 'path=' . $configuration->getCookiePath();
         }
 
-        if (!empty($configuration->getCookieDomain())) {
-            $cookieParams[] = 'domain=' . $configuration->getCookieDomain();
+        $domain = $this->getCookieDomain();
+        if (!empty($domain)) {
+            $cookieParams[] = 'domain=' . $domain;
         }
 
         if ($configuration->isCookieSecure()) {
@@ -410,6 +411,28 @@ class Session implements EmitterAwareInterface
         }
 
         return implode('; ', $cookieParams);
+    }
+
+    /**
+     * Get normalized cookie domain.
+     *
+     * @return string
+     */
+    protected function getCookieDomain() : string
+    {
+        $configuration = $this->getConfiguration();
+
+        $domain = $configuration->getCookieDomain();
+
+        // Current domain for local host names or IP addresses
+        if (empty($domain)
+            || strpos($domain, '.') === false
+            || filter_var($domain, FILTER_VALIDATE_IP) !== false
+        ) {
+            return '';
+        }
+
+        return $domain[0] === '.' ? $domain : '.' . $domain;
     }
 
     /**

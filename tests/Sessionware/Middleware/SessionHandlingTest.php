@@ -73,7 +73,7 @@ class SessionHandlingTest extends SessionTestCase
         $configuration
             ->expects(self::any())
             ->method('getCookieDomain')
-            ->will(self::returnValue('http://example.com'));
+            ->will(self::returnValue('.example.com'));
         $configuration
             ->expects(self::any())
             ->method('isCookieSecure')
