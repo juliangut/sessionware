@@ -91,7 +91,7 @@ class Session implements EmitterAwareInterface
             return;
         }
 
-        $this->emit(Event::named('pre.start'), $this);
+        $this->emit(Event::named('preStart'), $this);
 
         $this->originalData = $this->data = array_merge($this->data, $this->sessionManager->sessionStart());
 
@@ -99,7 +99,7 @@ class Session implements EmitterAwareInterface
             $this->regenerateId();
         }
 
-        $this->emit(Event::named('post.start'), $this);
+        $this->emit(Event::named('postStart'), $this);
 
         $this->manageTimeout();
     }
@@ -115,11 +115,11 @@ class Session implements EmitterAwareInterface
             throw new \RuntimeException('Cannot regenerate a not started session');
         }
 
-        $this->emit(Event::named('pre.regenerate_id'), $this);
+        $this->emit(Event::named('preRegenerateId'), $this);
 
         $this->sessionManager->sessionRegenerateId();
 
-        $this->emit(Event::named('post.regenerate_id'), $this);
+        $this->emit(Event::named('postRegenerateId'), $this);
     }
 
     /**
@@ -131,11 +131,11 @@ class Session implements EmitterAwareInterface
             return;
         }
 
-        $this->emit(Event::named('pre.reset'), $this);
+        $this->emit(Event::named('preReset'), $this);
 
         $this->data = $this->originalData;
 
-        $this->emit(Event::named('post.reset'), $this);
+        $this->emit(Event::named('postReset'), $this);
     }
 
     /**
@@ -147,11 +147,11 @@ class Session implements EmitterAwareInterface
             return;
         }
 
-        $this->emit(Event::named('pre.abort'), $this);
+        $this->emit(Event::named('preAbort'), $this);
 
         $this->sessionManager->sessionEnd($this->originalData);
 
-        $this->emit(Event::named('post.abort'), $this);
+        $this->emit(Event::named('postAbort'), $this);
     }
 
     /**
@@ -163,11 +163,11 @@ class Session implements EmitterAwareInterface
             return;
         }
 
-        $this->emit(Event::named('pre.close'), $this);
+        $this->emit(Event::named('preClose'), $this);
 
         $this->sessionManager->sessionEnd($this->data);
 
-        $this->emit(Event::named('post.close'), $this);
+        $this->emit(Event::named('postClose'), $this);
     }
 
     /**
@@ -181,11 +181,11 @@ class Session implements EmitterAwareInterface
             throw new \RuntimeException('Cannot destroy a not started session');
         }
 
-        $this->emit(Event::named('pre.destroy'), $this);
+        $this->emit(Event::named('preDestroy'), $this);
 
         $this->sessionManager->sessionDestroy();
 
-        $this->emit(Event::named('post.destroy'), $this);
+        $this->emit(Event::named('postDestroy'), $this);
 
         $this->originalData = $this->data = [];
     }
@@ -361,11 +361,11 @@ class Session implements EmitterAwareInterface
         $timeoutKey = $configuration->getTimeoutKey();
 
         if (array_key_exists($timeoutKey, $this->data) && $this->data[$timeoutKey] < time()) {
-            $this->emit(Event::named('pre.timeout'), $this);
+            $this->emit(Event::named('preTimeout'), $this);
 
             $this->sessionManager->sessionRegenerateId();
 
-            $this->emit(Event::named('post.timeout'), $this);
+            $this->emit(Event::named('postTimeout'), $this);
         }
 
         $this->data[$timeoutKey] = time() + $configuration->getLifetime();

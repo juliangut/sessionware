@@ -59,7 +59,7 @@ $session->set('sessionKey', 'value');
 $session->close();
 
 // Session cookie is not automatically set
-header('Set-Cookie', $session->getCookieString());
+header('Set-Cookie', $session->getSessionCookieString());
 ```
 
 Integrated on a Middleware workflow:
@@ -106,6 +106,7 @@ $configuration = new Configuration([
   'cookiePath' => '/',
   'cookieSecure' => false,
   'cookieHttpOnly' => true,
+  'cookieSameSite' => Configuration::SAME_SITE_LAX,
   'encryptionKey' => Key::loadFromAsciiSafeString('...'),
   'timeoutKey' => '__SESSIONWARE_TIMEOUT_TIMESTAMP__',
 ]);
@@ -241,20 +242,20 @@ $session = new \Jgut\Sessionware\Session($manager, ['user' => null]);
 
 Session raises events to which you can hook a callback to, during executing lifecycle:
 
-* `pre.start` triggered right before session is started
-* `post.start` triggered right after session has been started
-* `pre.regenerate_id` triggered right before session id is regenerated
-* `post.regenerate_id` triggered after before session id has been regenerated
-* `pre.reset` triggered right before session is reset
-* `post.reset` triggered right after session has been reset
-* `pre.abort` triggered right before session is aborted
-* `post.abort` triggered right after session has been aborted
-* `pre.close` triggered right before session is closed
-* `post.close` triggered right after session has been closed
-* `pre.destroy` triggered right before session is destroyed
-* `post.destroy` triggered right after session has been destroyed
-* `pre.timeout` triggered right before session is wiped when session timeout is reached
-* `post.timeout` triggered right after session has been restarted due to session timeout
+* `preStart` triggered right before session is started
+* `postStart` triggered right after session has been started
+* `preRegenerateId` triggered right before session identifier is regenerated
+* `postRegenerateId` triggered after before session identifier has been regenerated
+* `preReset` triggered right before session is reset
+* `postReset` triggered right after session has been reset
+* `preAbort` triggered right before session is aborted
+* `postAbort` triggered right after session has been aborted
+* `preClose` triggered right before session is closed
+* `postClose` triggered right after session has been closed
+* `preDestroy` triggered right before session is destroyed
+* `postDestroy` triggered right after session has been destroyed
+* `preTimeout` triggered right before session is wiped when session timeout is reached
+* `postTimeout` triggered right after session has been restarted due to session timeout
 
 Events provide current Session object as parameter:
 
@@ -274,6 +275,7 @@ $session->addListener('post.close', function($event, Session $session) {
 
 * Settings have been moved into Configuration object. This object accepts an array of settings on instantiation so it's just a matter of providing the settings to it
 * Review configuration settings names, some are slightly changed
+* Event names have been expanded and renamed
 * Middleware use is now separated from core session management. SessionHandling middleware needs an instance of Session
 * All session related actions have been moved to Session object instead of relying in built'in PHP session management, which you should not use
 
