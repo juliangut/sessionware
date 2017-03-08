@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Handler;
 
+use Jgut\Sessionware\Traits\HandlerTrait;
+
 /**
  * Redis session handler.
  */

@@ -13,7 +13,8 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Handler;
 
-use Jgut\Sessionware\Configuration;
+use Jgut\Sessionware\Traits\FileHandlerTrait;
+use Jgut\Sessionware\Traits\HandlerTrait;
 use Jgut\Sessionware\Traits\NativeSessionTrait;
 
 /**
@@ -22,25 +23,28 @@ use Jgut\Sessionware\Traits\NativeSessionTrait;
 class Native extends \SessionHandler implements Handler
 {
     use HandlerTrait;
+    use FileHandlerTrait;
     use NativeSessionTrait;
 
     /**
      * @var bool
      */
-    protected $isFileHandler;
+    protected $useFilesHandler;
 
     /**
      * Native session handler constructor.
      */
     public function __construct()
     {
-        $this->isFileHandler = $this->getStringIniSetting('save_handler') === 'files';
+        $this->useFilesHandler = $this->getStringIniSetting('save_handler') === 'files';
     }
 
     /**
      * {@inheritdoc}
      *
      * @throws \RuntimeException
+     *
+     * @SuppressWarnings(PMD.UnusedFormalParameter)
      */
     public function open($savePath, $sessionName)
     {
@@ -49,19 +53,8 @@ class Native extends \SessionHandler implements Handler
         $savePath = $this->configuration->getSavePath();
         $sessionName = $this->configuration->getName();
 
-        if ($this->isFileHandler) {
-            $savePathParts = explode(DIRECTORY_SEPARATOR, rtrim($savePath, DIRECTORY_SEPARATOR));
-            if ($sessionName !== Configuration::SESSION_NAME_DEFAULT && $sessionName !== array_pop($savePathParts)) {
-                $savePath .= DIRECTORY_SEPARATOR . $sessionName;
-            }
-
-            if (!is_dir($savePath) && !@mkdir($savePath, 0777, true) && !is_dir($savePath)) {
-                // @codeCoverageIgnoreStart
-                throw new \RuntimeException(
-                    sprintf('Failed to create session save path "%s", directory might be write protected', $savePath)
-                );
-                // @codeCoverageIgnoreEnd
-            }
+        if ($this->useFilesHandler) {
+            $savePath = $this->createSavePath($savePath, $sessionName);
         }
 
         return parent::open($savePath, $sessionName);

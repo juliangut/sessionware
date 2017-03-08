@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-namespace Jgut\Sessionware\Handler;
+namespace Jgut\Sessionware\Traits;
 
 use Defuse\Crypto\Crypto;
 use Defuse\Crypto\Exception\CryptoException;

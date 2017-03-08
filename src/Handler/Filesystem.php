@@ -13,7 +13,8 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Handler;
 
-use Jgut\Sessionware\Configuration;
+use Jgut\Sessionware\Traits\FileHandlerTrait;
+use Jgut\Sessionware\Traits\HandlerTrait;
 
 /**
  * Filesystem session handler.
@@ -21,6 +22,7 @@ use Jgut\Sessionware\Configuration;
 class Filesystem implements Handler
 {
     use HandlerTrait;
+    use FileHandlerTrait;
 
     /**
      * @var string
@@ -46,28 +48,14 @@ class Filesystem implements Handler
      * {@inheritdoc}
      *
      * @throws \RuntimeException
+     *
+     * @SuppressWarnings(PMD.UnusedFormalParameter)
      */
     public function open($savePath, $sessionName)
     {
         $this->testConfiguration();
 
-        $savePath = $this->configuration->getSavePath();
-        $sessionName = $this->configuration->getName();
-
-        $savePathParts = explode(DIRECTORY_SEPARATOR, rtrim($savePath, DIRECTORY_SEPARATOR));
-        if ($sessionName !== Configuration::SESSION_NAME_DEFAULT && $sessionName !== array_pop($savePathParts)) {
-            $savePath .= DIRECTORY_SEPARATOR . $sessionName;
-        }
-
-        if (!is_dir($savePath) && !@mkdir($savePath, 0777, true) && !is_dir($savePath)) {
-            // @codeCoverageIgnoreStart
-            throw new \RuntimeException(
-                sprintf('Failed to create session save path "%s", directory might be write protected', $savePath)
-            );
-            // @codeCoverageIgnoreEnd
-        }
-
-        $this->savePath = $savePath;
+        $this->savePath = $this->createSavePath($this->configuration->getSavePath(), $this->configuration->getName());
 
         return true;
     }

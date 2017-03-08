@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Tests\Stubs;
 
-use Jgut\Sessionware\Handler\HandlerTrait;
+use Jgut\Sessionware\Traits\HandlerTrait;
 
 /**
  * Session handler utility trait test case class.
