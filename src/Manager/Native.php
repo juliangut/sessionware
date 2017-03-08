@@ -107,7 +107,7 @@ class Native implements Manager
             throw new \RuntimeException('Session identifier cannot be manually altered once session is started');
         }
 
-        $this->sessionId = $sessionId;
+        $this->sessionId = trim($sessionId);
     }
 
     /**
@@ -115,7 +115,7 @@ class Native implements Manager
      *
      * @throws \RuntimeException
      *
-     * @return array|null
+     * @return array
      */
     public function sessionStart() : array
     {
@@ -324,7 +324,7 @@ class Native implements Manager
      */
     public function shouldRegenerateId() : bool
     {
-        return strlen($this->sessionId) !== Configuration::SESSION_ID_LENGTH;
+        return !empty($this->sessionId) && strlen($this->sessionId) !== Configuration::SESSION_ID_LENGTH;
     }
 
     /**

@@ -97,6 +97,7 @@ $app->run();
 
 ```php
 use Defuse\Crypto\Key;
+use Jgut\Sessionware\Configuration;
 
 $configuration = new Configuration([
   'name' => 'Sessionware',
@@ -120,11 +121,11 @@ Assigns session name, default PHP `PHPSESSID` session name will be used if none 
 
 #### savePath
 
-Native handler specific configuration, used if default 'files' session save handler is specified in `session.save_handler` ini setting. It defaults to `session.save_path` ini setting or `sys_get_temp_dir()` if empty.
+Used both in Native (when using 'files' session save handler is specified in `session.save_handler` ini setting) and Filesystem handlers. It defaults to `session.save_path` ini setting or `sys_get_temp_dir()` if empty.
 
-Resulting "session save path" will be determined by joining this parameter with session name (other than default `PHPSESSID`). This is done so that session files for current script gets separated from other script's into its own directory.
+Resulting "session save path" will be determined by appending session name (other than default `PHPSESSID`) to this parameter. This is done so that session files for current script gets separated from other script's into its own directory.
 
-'files' handler garbage collector uses file access time to determine and remove expired session files. If files from sessions with different lifetime are located in the same directory they could be removed by other script/application as there is no way for the garbage collector to tell which script/application they belong to.
+Native 'files' session save handler's garbage collector (and Filesystem handler's too) uses file access time to determine and remove expired session files. If files from sessions with different lifetime are located in the same directory they could be removed by other script/application as there is no way for the garbage collector to tell which script/application they belong to.
 
 #### lifetime
 
@@ -157,7 +158,7 @@ composer require defuse/php-encryption
 
 #### timeoutKey
 
-Parameter stored in session array to control session validity according to `lifetime` parameter. Defaults to `
+Parameter stored as session data to control session validity according to `lifetime` parameter. Defaults to `
 \Jgut\Sessionware\Configuration::TIMEOUT_KEY_DEFAULT`
 
 _It is advised not to change this value unless it conflicts with one of your own session keys, which is unlikely if not directly impossible_
@@ -166,12 +167,12 @@ _It is advised not to change this value unless it conflicts with one of your own
 
 Handlers are only used with Native manager and are a replacement for `session.save_handler` ini setting. It allows for the selection of several ways of persisting session data:
 
-* `\Jgut\Sessionware\Handler\File` use a blocking filesystem to store session
-* `\Jgut\Sessionware\Handler\Memcached` use a Memcached service to save session
+* `\Jgut\Sessionware\Handler\Filesystem` use a blocking filesystem
+* `\Jgut\Sessionware\Handler\Memcached` use a Memcached service
 * `\Jgut\Sessionware\Handler\Memory` an in-memory session for testing purposes
-* `\Jgut\Sessionware\Handler\Native` use PHP built-in `files` session saving
-* `\Jgut\Sessionware\Handler\Predis` use a Predis Client instance to store session
-* `\Jgut\Sessionware\Handler\Redis` use a Redis instance to store session
+* `\Jgut\Sessionware\Handler\Native` use PHP built-in `session.save_handler`
+* `\Jgut\Sessionware\Handler\Predis` use a Predis Client instance
+* `\Jgut\Sessionware\Handler\Redis` use a Redis instance
 
 ```php
 $memcached = new \Memcached();
@@ -222,7 +223,7 @@ The session manager provides a nice OOP API to access session related actions:
 * `Session::regenerateId()` cryptographically secure session identifier regeneration
 * `Session::has($var)` verify a variable is saved in session
 * `Session::set($var, $val)` save a variable into session
-* `Session::get($var)` get a variable from session
+* `Session::get($var, $default)` get a variable from session
 * `Session::remove($var)` remove a variable from session
 * `Session::clear()` remove all session variables
 * `Session::reset()` Revert session to its original data

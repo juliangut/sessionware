@@ -380,32 +380,70 @@ class Session implements EmitterAwareInterface
      */
     public function withSessionCookie(ResponseInterface $response) : ResponseInterface
     {
-        if (!empty($this->getId()) && !$this->isDestroyed()) {
-            $response = $response->withAddedHeader('Set-Cookie', $this->getSessionCookieString());
+        $cookieString = $this->getSessionCookieString();
+
+        if (!empty($cookieString)) {
+            $response = $response->withAddedHeader('Set-Cookie', $cookieString);
         }
 
         return $response;
     }
 
     /**
-     * Get cookie header content.
+     * Get session cookie content.
      *
      * @return string
      */
     public function getSessionCookieString() : string
     {
-        $configuration = $this->getConfiguration();
+        if (empty($this->getId())) {
+            return '';
+        }
 
-        $timeoutKey = $configuration->getTimeoutKey();
-        $expireTime = array_key_exists($timeoutKey, $this->data)
-            ? $this->data[$timeoutKey]
-            : time() + $configuration->getLifetime();
+        if ($this->isDestroyed()) {
+            return $this->getExpiredCookieString();
+        }
+
+        return $this->getInitiatedCookieString();
+    }
+
+    /**
+     * Get session expired cookie.
+     *
+     * @return string
+     */
+    protected function getExpiredCookieString() : string
+    {
+        $configuration = $this->getConfiguration();
 
         return sprintf(
             '%s=%s; %s',
             urlencode($configuration->getName()),
             urlencode($this->getId()),
-            $this->getCookieParameters($expireTime)
+            $this->getCookieParameters(0, 1)
+        );
+    }
+
+    /**
+     * Get normal session cookie.
+     *
+     * @return string
+     */
+    protected function getInitiatedCookieString() : string
+    {
+        $configuration = $this->getConfiguration();
+
+        $lifetime = $configuration->getLifetime();
+        $timeoutKey = $configuration->getTimeoutKey();
+        $expireTime = array_key_exists($timeoutKey, $this->data)
+            ? $this->data[$timeoutKey]
+            : time() + $lifetime;
+
+        return sprintf(
+            '%s=%s; %s',
+            urlencode($configuration->getName()),
+            urlencode($this->getId()),
+            $this->getCookieParameters($expireTime, $lifetime)
         );
     }
 
@@ -413,19 +451,16 @@ class Session implements EmitterAwareInterface
      * Get session cookie parameters.
      *
      * @param int $expireTime
+     * @param int $lifetime
      *
      * @return string
      */
-    protected function getCookieParameters(int $expireTime) : string
+    protected function getCookieParameters(int $expireTime, int $lifetime) : string
     {
         $configuration = $this->getConfiguration();
 
         $cookieParams = [
-            sprintf(
-                'expires=%s; max-age=%s',
-                gmdate('D, d M Y H:i:s T', $expireTime),
-                $configuration->getLifetime()
-            ),
+            sprintf('expires=%s; max-age=%s', gmdate('D, d M Y H:i:s T', $expireTime), $lifetime),
         ];
 
         if (!empty($configuration->getCookiePath())) {

@@ -453,7 +453,75 @@ class SessionTest extends SessionTestCase
         $session->setId('sdfh');
     }
 
-    public function testSessionCookieString()
+    public function testNotStartedSessionCookieString()
+    {
+        $configuration = new Configuration(
+            [
+                'name' => 'Sessionware',
+            ]
+        );
+
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('getConfiguration')
+            ->will(self::returnValue($configuration));
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
+
+        $session = new Session($manager);
+
+        self::assertEquals('', $session->getSessionCookieString());
+    }
+
+    public function testDestroyedSessionCookieString()
+    {
+        $sessionId = 'ch3OZUQU3J93jqFRlbC7t5zzUrXq1m8AmBj87wdaUNZMzKHb9T5sYd8iZItWFR720NfoYmAztV3Izbpt';
+
+        $configuration = new Configuration(
+            [
+                'name' => 'Sessionware',
+                'lifetime' => Configuration::LIFETIME_FLASH,
+                'cookiePath' => '/home',
+                'cookieDomain' => 'localhost',
+                'cookieSecure' => true,
+                'cookieHttpOnly' => true,
+                'cookieSameSite' => Configuration::SAME_SITE_STRICT,
+            ]
+        );
+
+        $manager = $this->getMockBuilder(Native::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager
+            ->expects(self::any())
+            ->method('getSessionId')
+            ->will(self::returnValue($sessionId));
+        $manager
+            ->expects(self::any())
+            ->method('isSessionDestroyed')
+            ->will(self::returnValue(true));
+        $manager
+            ->expects(self::any())
+            ->method('getConfiguration')
+            ->will(self::returnValue($configuration));
+        /* @var \Jgut\Sessionware\Manager\Manager $manager */
+
+        $session = new Session($manager);
+
+        $cookieHeader = $session->getSessionCookieString();
+
+        self::assertSame(strpos($cookieHeader, $configuration->getName() . '=' . $sessionId), 0);
+        self::assertNotSame(strpos($cookieHeader, 'max-age=1'), false);
+        self::assertNotSame(strpos($cookieHeader, 'path=' . $configuration->getCookiePath()), false);
+        self::assertSame(strpos($cookieHeader, 'domain='), false);
+        self::assertNotSame(strpos($cookieHeader, 'secure'), false);
+        self::assertNotSame(strpos($cookieHeader, 'httponly'), false);
+        self::assertNotSame(strpos($cookieHeader, 'SameSite=' . $configuration->getCookieSameSite()), false);
+    }
+
+    public function testInitiatedSessionCookieString()
     {
         $sessionId = 'ch3OZUQU3J93jqFRlbC7t5zzUrXq1m8AmBj87wdaUNZMzKHb9T5sYd8iZItWFR720NfoYmAztV3Izbpt';
 
