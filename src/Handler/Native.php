@@ -54,7 +54,11 @@ class Native extends \SessionHandler implements Handler
         $sessionName = $this->configuration->getName();
 
         if ($this->useFilesHandler) {
-            $savePath = $this->createSavePath($savePath, $sessionName);
+            $savePathParts = explode(';', $savePath);
+
+            $savePathParts[] = $this->createSavePath(array_pop($savePathParts), $sessionName);
+
+            $savePath = implode(';', $savePathParts);
         }
 
         return parent::open($savePath, $sessionName);

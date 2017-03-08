@@ -52,7 +52,7 @@ class NativeTest extends SessionTestCase
         $this->configuration
             ->expects(self::any())
             ->method('getSavePath')
-            ->will(self::returnValue(sys_get_temp_dir()));
+            ->will(self::returnValue('0;600;' . sys_get_temp_dir()));
 
         $handler = new Native();
         $handler->setConfiguration($this->configuration);
