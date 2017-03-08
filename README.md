@@ -125,7 +125,7 @@ Used both in Native (when using 'files' session save handler is specified in `se
 
 Resulting "session save path" will be determined by appending session name (other than default `PHPSESSID`) to this parameter. This is done so that session files for current script gets separated from other script's into its own directory.
 
-Native 'files' session save handler's garbage collector (and Filesystem handler's too) uses file access time to determine and remove expired session files. If files from sessions with different lifetime are located in the same directory they could be removed by other script/application as there is no way for the garbage collector to tell which script/application they belong to.
+Native 'files' session save handler's garbage collector (and Filesystem handler's too) uses file's modification time to determine and remove expired session files. If files from sessions with different lifetime are located in the same directory they could be removed by other script as there is no way for the garbage collector to tell apart session files from different scripts.
 
 #### lifetime
 
