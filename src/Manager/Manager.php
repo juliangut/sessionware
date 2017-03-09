@@ -32,52 +32,28 @@ interface Manager
      *
      * @return string
      */
-    public function getSessionId() : string;
+    public function getId() : string;
 
     /**
      * @param string $sessionId
      *
      * @return self
      */
-    public function setSessionId(string $sessionId);
+    public function setId(string $sessionId);
 
     /**
      * Start session.
      *
      * @return array
      */
-    public function sessionStart() : array;
+    public function start() : array;
 
     /**
      * Save session data and end session.
      *
      * @param array $data
      */
-    public function sessionEnd(array $data = []);
-
-    /**
-     * Regenerate session identifier.
-     */
-    public function sessionRegenerateId();
-
-    /**
-     * Destroy session.
-     */
-    public function sessionDestroy();
-
-    /**
-     * Has session been started.
-     *
-     * @return bool
-     */
-    public function isSessionStarted() : bool;
-
-    /**
-     * Has session been destroyed.
-     *
-     * @return bool
-     */
-    public function isSessionDestroyed() : bool;
+    public function close(array $data = []);
 
     /**
      * Should session identifier be regenerated.
@@ -85,4 +61,28 @@ interface Manager
      * @return bool
      */
     public function shouldRegenerateId() : bool;
+
+    /**
+     * Regenerate session identifier.
+     */
+    public function regenerateId();
+
+    /**
+     * Destroy session.
+     */
+    public function destroy();
+
+    /**
+     * Has session been started.
+     *
+     * @return bool
+     */
+    public function isStarted() : bool;
+
+    /**
+     * Has session been destroyed.
+     *
+     * @return bool
+     */
+    public function isDestroyed() : bool;
 }

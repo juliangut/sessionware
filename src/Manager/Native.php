@@ -91,7 +91,7 @@ class Native implements Manager
     /**
      * {@inheritdoc}
      */
-    public function getSessionId() : string
+    public function getId() : string
     {
         return !empty($this->sessionId) ? $this->sessionId : '';
     }
@@ -101,7 +101,7 @@ class Native implements Manager
      *
      * @throws \RuntimeException
      */
-    public function setSessionId(string $sessionId)
+    public function setId(string $sessionId)
     {
         if ($this->sessionStarted) {
             throw new \RuntimeException('Session identifier cannot be manually altered once session is started');
@@ -117,7 +117,7 @@ class Native implements Manager
      *
      * @return array
      */
-    public function sessionStart() : array
+    public function start() : array
     {
         $this->verifyIniSettings();
 
@@ -139,18 +139,18 @@ class Native implements Manager
             );
         }
 
-        $this->configureSession();
-        $this->initializeSession();
+        $this->configure();
+        $this->initialize();
 
         $this->sessionStarted = true;
 
-        return $this->loadSessionData();
+        return $this->loadData();
     }
 
     /**
      * Configure session settings.
      */
-    protected function configureSession()
+    protected function configure()
     {
         // Use better session serializer when available
         if ($this->getStringIniSetting('serialize_handler') !== 'php_serialize') {
@@ -170,7 +170,7 @@ class Native implements Manager
      *
      * @throws \RuntimeException
      */
-    final protected function initializeSession()
+    final protected function initialize()
     {
         if (!empty($this->sessionId)) {
             session_id($this->sessionId);
@@ -198,7 +198,7 @@ class Native implements Manager
      *
      * @SuppressWarnings(PHPMD.Superglobals)
      */
-    final protected function loadSessionData()
+    final protected function loadData()
     {
         $keyPattern = '/^' . $this->configuration->getName() . '\./';
         $data = [];
@@ -215,12 +215,20 @@ class Native implements Manager
 
     /**
      * {@inheritdoc}
+     */
+    public function shouldRegenerateId() : bool
+    {
+        return !empty($this->sessionId) && strlen($this->sessionId) !== Configuration::SESSION_ID_LENGTH;
+    }
+
+    /**
+     * {@inheritdoc}
      *
      * @throws \RuntimeException
      *
      * @SuppressWarnings(PMD.Superglobals)
      */
-    public function sessionRegenerateId()
+    public function regenerateId()
     {
         if (!$this->sessionStarted) {
             throw new \RuntimeException('Cannot regenerate id a not started session');
@@ -238,9 +246,9 @@ class Native implements Manager
             // @codeCoverageIgnoreEnd
         }
 
-        $this->sessionId = $this->getNewSessionId();
+        $this->sessionId = $this->getNewSessionId(Configuration::SESSION_ID_LENGTH);
 
-        $this->sessionStart();
+        $this->start();
     }
 
     /**
@@ -250,7 +258,7 @@ class Native implements Manager
      *
      * @SuppressWarnings(PMD.Superglobals)
      */
-    public function sessionEnd(array $data = [])
+    public function close(array $data = [])
     {
         if (!$this->sessionStarted) {
             throw new \RuntimeException('Cannot end a not started session');
@@ -283,7 +291,7 @@ class Native implements Manager
      *
      * @SuppressWarnings(PMD.Superglobals)
      */
-    public function sessionDestroy()
+    public function destroy()
     {
         if (!$this->sessionStarted) {
             throw new \RuntimeException('Cannot destroy a not started session');
@@ -306,7 +314,7 @@ class Native implements Manager
     /**
      * {@inheritdoc}
      */
-    public function isSessionStarted() : bool
+    public function isStarted() : bool
     {
         return $this->sessionStarted;
     }
@@ -314,17 +322,9 @@ class Native implements Manager
     /**
      * {@inheritdoc}
      */
-    public function isSessionDestroyed() : bool
+    public function isDestroyed() : bool
     {
         return $this->sessionDestroyed;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function shouldRegenerateId() : bool
-    {
-        return !empty($this->sessionId) && strlen($this->sessionId) !== Configuration::SESSION_ID_LENGTH;
     }
 
     /**
@@ -374,12 +374,12 @@ class Native implements Manager
      *
      * @return string
      */
-    private function getNewSessionId($length = Configuration::SESSION_ID_LENGTH) : string
+    private function getNewSessionId(int $length) : string
     {
         return substr(
-            preg_replace('/[^a-zA-Z0-9-]+/', '', base64_encode(random_bytes((int) $length))),
+            preg_replace('/[^a-zA-Z0-9-]+/', '', base64_encode(random_bytes($length))),
             0,
-            (int) $length
+            $length
         );
     }
 }

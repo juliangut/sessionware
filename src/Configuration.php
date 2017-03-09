@@ -362,11 +362,11 @@ class Configuration
      */
     public function setLifetime(int $lifetime)
     {
-        if ((int) $lifetime < 1) {
+        if ($lifetime < 1) {
             throw new \InvalidArgumentException('Session lifetime must be a positive integer');
         }
 
-        $this->lifetime = (int) $lifetime;
+        $this->lifetime = $lifetime;
 
         return $this;
     }

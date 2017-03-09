@@ -100,7 +100,7 @@ class SessionHandlingTest extends SessionTestCase
             ->getMock();
         $manager
             ->expects(self::any())
-            ->method('isSessionStarted')
+            ->method('isStarted')
             ->will(self::returnValue(false));
         $manager
             ->expects(self::any())

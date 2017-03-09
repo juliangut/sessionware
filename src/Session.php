@@ -112,7 +112,7 @@ class Session implements EmitterAwareInterface
 
         $this->emit(Event::named('preStart'), $this);
 
-        $this->originalData = $this->data = array_merge($this->data, $this->sessionManager->sessionStart());
+        $this->originalData = $this->data = array_merge($this->data, $this->sessionManager->start());
 
         if ($this->sessionManager->shouldRegenerateId()) {
             $this->regenerateId();
@@ -136,7 +136,7 @@ class Session implements EmitterAwareInterface
 
         $this->emit(Event::named('preRegenerateId'), $this);
 
-        $this->sessionManager->sessionRegenerateId();
+        $this->sessionManager->regenerateId();
 
         $this->emit(Event::named('postRegenerateId'), $this);
     }
@@ -168,7 +168,7 @@ class Session implements EmitterAwareInterface
 
         $this->emit(Event::named('preAbort'), $this);
 
-        $this->sessionManager->sessionEnd($this->originalData);
+        $this->sessionManager->close($this->originalData);
 
         $this->emit(Event::named('postAbort'), $this);
     }
@@ -184,7 +184,7 @@ class Session implements EmitterAwareInterface
 
         $this->emit(Event::named('preClose'), $this);
 
-        $this->sessionManager->sessionEnd($this->data);
+        $this->sessionManager->close($this->data);
 
         $this->emit(Event::named('postClose'), $this);
     }
@@ -202,7 +202,7 @@ class Session implements EmitterAwareInterface
 
         $this->emit(Event::named('preDestroy'), $this);
 
-        $this->sessionManager->sessionDestroy();
+        $this->sessionManager->destroy();
 
         $this->emit(Event::named('postDestroy'), $this);
 
@@ -216,7 +216,7 @@ class Session implements EmitterAwareInterface
      */
     public function isActive() : bool
     {
-        return $this->sessionManager->isSessionStarted();
+        return $this->sessionManager->isStarted();
     }
 
     /**
@@ -226,7 +226,7 @@ class Session implements EmitterAwareInterface
      */
     public function isDestroyed() : bool
     {
-        return $this->sessionManager->isSessionDestroyed();
+        return $this->sessionManager->isDestroyed();
     }
 
     /**
@@ -236,7 +236,7 @@ class Session implements EmitterAwareInterface
      */
     public function getId() : string
     {
-        return $this->sessionManager->getSessionId();
+        return $this->sessionManager->getId();
     }
 
     /**
@@ -269,7 +269,7 @@ class Session implements EmitterAwareInterface
             throw new \RuntimeException('Cannot set session id on started or destroyed sessions');
         }
 
-        $this->sessionManager->setSessionId($sessionId);
+        $this->sessionManager->setId($sessionId);
     }
 
     /**
@@ -381,7 +381,7 @@ class Session implements EmitterAwareInterface
         if (array_key_exists($timeoutKey, $this->data) && $this->data[$timeoutKey] < time()) {
             $this->emit(Event::named('preTimeout'), $this);
 
-            $this->sessionManager->sessionRegenerateId();
+            $this->sessionManager->regenerateId();
 
             $this->emit(Event::named('postTimeout'), $this);
         }

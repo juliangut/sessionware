@@ -66,7 +66,7 @@ class NativeTest extends SessionTestCase
         ini_set($setting, $value);
 
         $manager = new Native($this->configuration);
-        $manager->sessionStart();
+        $manager->start();
     }
 
     /**
@@ -89,13 +89,13 @@ class NativeTest extends SessionTestCase
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        self::assertFalse($manager->isSessionStarted());
-        self::assertFalse($manager->isSessionDestroyed());
+        self::assertFalse($manager->isStarted());
+        self::assertFalse($manager->isDestroyed());
         self::assertSame($this->configuration, $manager->getConfiguration());
-        self::assertEmpty($manager->getSessionId());
+        self::assertEmpty($manager->getId());
 
-        $manager->setSessionId($this->sessionId);
-        self::assertEquals($this->sessionId, $manager->getSessionId());
+        $manager->setId($this->sessionId);
+        self::assertEquals($this->sessionId, $manager->getId());
     }
 
     /**
@@ -108,10 +108,10 @@ class NativeTest extends SessionTestCase
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        $manager->sessionStart();
-        $manager->sessionDestroy();
+        $manager->start();
+        $manager->destroy();
 
-        $manager->sessionStart();
+        $manager->start();
     }
 
     /**
@@ -124,8 +124,8 @@ class NativeTest extends SessionTestCase
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        $manager->sessionStart();
-        $manager->sessionStart();
+        $manager->start();
+        $manager->start();
     }
 
     /**
@@ -138,7 +138,7 @@ class NativeTest extends SessionTestCase
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        $manager->sessionStart();
+        $manager->start();
     }
 
     /**
@@ -151,9 +151,9 @@ class NativeTest extends SessionTestCase
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        $manager->sessionStart();
+        $manager->start();
 
-        $manager->setSessionId($this->sessionId);
+        $manager->setId($this->sessionId);
     }
 
     /**
@@ -166,8 +166,8 @@ class NativeTest extends SessionTestCase
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        $manager->sessionStart();
-        $manager->sessionStart();
+        $manager->start();
+        $manager->start();
     }
 
     /**
@@ -177,17 +177,17 @@ class NativeTest extends SessionTestCase
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        $manager->sessionStart();
+        $manager->start();
 
         self::assertEquals('php_serialize', ini_get('session.serialize_handler'));
         self::assertSame($this->configuration->getLifetime(), (int) ini_get('session.gc_maxlifetime'));
         self::assertEquals('user', ini_get('session.save_handler'));
         self::assertEquals('user', session_module_name());
-        self::assertTrue($manager->isSessionStarted());
+        self::assertTrue($manager->isStarted());
 
         self::assertEquals($this->configuration->getName(), session_name());
-        self::assertNotNull($manager->getSessionId());
-        self::assertTrue($manager->isSessionStarted());
+        self::assertNotNull($manager->getId());
+        self::assertTrue($manager->isStarted());
     }
 
     /**
@@ -199,11 +199,11 @@ class NativeTest extends SessionTestCase
 
         $manager = new Native($this->configuration, $handler);
 
-        $manager->sessionStart();
+        $manager->start();
 
-        $manager->sessionEnd(['sessionVar' => 'sessionValue']);
+        $manager->close(['sessionVar' => 'sessionValue']);
 
-        $sessionData = $manager->sessionStart();
+        $sessionData = $manager->start();
 
         self::assertInternalType('array', $sessionData);
         self::assertTrue(array_key_exists('sessionVar', $sessionData));
@@ -219,7 +219,7 @@ class NativeTest extends SessionTestCase
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        $manager->sessionEnd();
+        $manager->close();
     }
 
     /**
@@ -229,11 +229,11 @@ class NativeTest extends SessionTestCase
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        $manager->sessionStart();
+        $manager->start();
 
-        $manager->sessionEnd(['sessionKey' => 'sessionValue']);
+        $manager->close(['sessionKey' => 'sessionValue']);
 
-        self::assertFalse($manager->isSessionStarted());
+        self::assertFalse($manager->isStarted());
         self::assertFalse(isset($_SESSION));
     }
 
@@ -247,7 +247,7 @@ class NativeTest extends SessionTestCase
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        $manager->sessionRegenerateId();
+        $manager->regenerateId();
     }
 
     /**
@@ -257,15 +257,15 @@ class NativeTest extends SessionTestCase
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        $manager->sessionStart();
+        $manager->start();
 
         self::assertTrue($manager->shouldRegenerateId());
 
-        $originalSessionId = $manager->getSessionId();
+        $originalSessionId = $manager->getId();
 
-        $manager->sessionRegenerateId();
+        $manager->regenerateId();
 
-        self::assertNotEquals($originalSessionId, $manager->getSessionId());
+        self::assertNotEquals($originalSessionId, $manager->getId());
         self::assertEquals($this->configuration->getName(), session_name());
         self::assertFalse(isset($_SESSION));
         self::assertFalse($manager->shouldRegenerateId());
@@ -281,7 +281,7 @@ class NativeTest extends SessionTestCase
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        $manager->sessionDestroy();
+        $manager->destroy();
     }
 
     /**
@@ -291,11 +291,11 @@ class NativeTest extends SessionTestCase
     {
         $manager = new Native($this->configuration, $this->handler);
 
-        $manager->sessionStart();
+        $manager->start();
 
-        $manager->sessionDestroy();
+        $manager->destroy();
 
         self::assertFalse(isset($_SESSION));
-        self::assertTrue($manager->isSessionDestroyed());
+        self::assertTrue($manager->isDestroyed());
     }
 }

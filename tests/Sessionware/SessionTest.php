@@ -107,11 +107,11 @@ class SessionTest extends SessionTestCase
             ->getMock();
         $manager
             ->expects(self::any())
-            ->method('isSessionStarted')
+            ->method('isStarted')
             ->will(self::onConsecutiveCalls(false, false, true, true));
         $manager
             ->expects(self::once())
-            ->method('sessionStart')
+            ->method('start')
             ->will(self::returnValue([]));
         $manager
             ->expects(self::any())
@@ -119,7 +119,7 @@ class SessionTest extends SessionTestCase
             ->will(self::returnValue(true));
         $manager
             ->expects(self::once())
-            ->method('sessionRegenerateId');
+            ->method('regenerateId');
         $manager
             ->expects(self::any())
             ->method('getConfiguration')
@@ -146,11 +146,11 @@ class SessionTest extends SessionTestCase
             ->getMock();
         $manager
             ->expects(self::any())
-            ->method('isSessionStarted')
+            ->method('isStarted')
             ->will(self::onConsecutiveCalls(false, false, true, true));
         $manager
             ->expects(self::once())
-            ->method('sessionStart')
+            ->method('start')
             ->will(self::returnValue([]));
         $manager
             ->expects(self::any())
@@ -158,7 +158,7 @@ class SessionTest extends SessionTestCase
             ->will(self::returnValue(false));
         $manager
             ->expects(self::once())
-            ->method('sessionRegenerateId');
+            ->method('regenerateId');
         $manager
             ->expects(self::any())
             ->method('getConfiguration')
@@ -185,11 +185,11 @@ class SessionTest extends SessionTestCase
             ->getMock();
         $manager
             ->expects(self::any())
-            ->method('isSessionStarted')
+            ->method('isStarted')
             ->will(self::onConsecutiveCalls(false, true, false));
         $manager
             ->expects(self::once())
-            ->method('sessionStart')
+            ->method('start')
             ->will(self::returnValue([]));
         $manager
             ->expects(self::any())
@@ -197,7 +197,7 @@ class SessionTest extends SessionTestCase
             ->will(self::returnValue(false));
         $manager
             ->expects(self::once())
-            ->method('sessionEnd');
+            ->method('close');
         /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
         $session = new Session($manager);
@@ -219,7 +219,7 @@ class SessionTest extends SessionTestCase
             ->getMock();
         $manager
             ->expects(self::any())
-            ->method('isSessionStarted')
+            ->method('isStarted')
             ->will(self::returnValue(false));
         /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
@@ -235,18 +235,18 @@ class SessionTest extends SessionTestCase
             ->getMock();
         $manager
             ->expects(self::any())
-            ->method('isSessionStarted')
+            ->method('isStarted')
             ->will(self::onConsecutiveCalls(false, true, true));
         $manager
             ->expects(self::once())
-            ->method('sessionStart')
+            ->method('start')
             ->will(self::returnValue([]));
         $manager
             ->expects(self::once())
-            ->method('sessionRegenerateId');
+            ->method('regenerateId');
         $manager
             ->expects(self::once())
-            ->method('getSessionId')
+            ->method('getId')
             ->will(self::returnValue($this->sessionId));
         /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
@@ -270,11 +270,11 @@ class SessionTest extends SessionTestCase
             ->getMock();
         $manager
             ->expects(self::any())
-            ->method('isSessionStarted')
+            ->method('isStarted')
             ->will(self::onConsecutiveCalls(false, true, false));
         $manager
             ->expects(self::once())
-            ->method('sessionStart')
+            ->method('start')
             ->will(self::returnValue([]));
         /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
@@ -302,15 +302,15 @@ class SessionTest extends SessionTestCase
             ->getMock();
         $manager
             ->expects(self::any())
-            ->method('isSessionStarted')
+            ->method('isStarted')
             ->will(self::onConsecutiveCalls(false, true, false));
         $manager
             ->expects(self::once())
-            ->method('sessionStart')
+            ->method('start')
             ->will(self::returnValue([]));
         $manager
             ->expects(self::once())
-            ->method('sessionEnd')
+            ->method('close')
             ->with(['initial' => 'data']);
         /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
@@ -335,7 +335,7 @@ class SessionTest extends SessionTestCase
             ->getMock();
         $manager
             ->expects(self::any())
-            ->method('isSessionStarted')
+            ->method('isStarted')
             ->will(self::returnValue(false));
         /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
@@ -351,19 +351,19 @@ class SessionTest extends SessionTestCase
             ->getMock();
         $manager
             ->expects(self::any())
-            ->method('isSessionStarted')
+            ->method('isStarted')
             ->will(self::onConsecutiveCalls(false, true, true));
         $manager
             ->expects(self::any())
-            ->method('isSessionDestroyed')
+            ->method('isDestroyed')
             ->will(self::returnValue(true));
         $manager
             ->expects(self::once())
-            ->method('sessionStart')
+            ->method('start')
             ->will(self::returnValue([]));
         $manager
             ->expects(self::once())
-            ->method('sessionDestroy');
+            ->method('destroy');
         $manager
             ->expects(self::any())
             ->method('getConfiguration')
@@ -389,7 +389,7 @@ class SessionTest extends SessionTestCase
             ->getMock();
         $manager
             ->expects(self::once())
-            ->method('setSessionId');
+            ->method('setId');
         /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
         $session = new Session($manager);
@@ -408,11 +408,11 @@ class SessionTest extends SessionTestCase
             ->getMock();
         $manager
             ->expects(self::any())
-            ->method('isSessionStarted')
+            ->method('isStarted')
             ->will(self::onConsecutiveCalls(false, true, true));
         $manager
             ->expects(self::once())
-            ->method('sessionStart')
+            ->method('start')
             ->will(self::returnValue([]));
         /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
@@ -434,15 +434,15 @@ class SessionTest extends SessionTestCase
             ->getMock();
         $manager
             ->expects(self::any())
-            ->method('isSessionStarted')
+            ->method('isStarted')
             ->will(self::onConsecutiveCalls(false, true, true));
         $manager
             ->expects(self::once())
-            ->method('sessionStart')
+            ->method('start')
             ->will(self::returnValue([]));
         $manager
             ->expects(self::once())
-            ->method('sessionDestroy');
+            ->method('destroy');
         /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
         $session = new Session($manager);
@@ -496,11 +496,11 @@ class SessionTest extends SessionTestCase
             ->getMock();
         $manager
             ->expects(self::any())
-            ->method('getSessionId')
+            ->method('getId')
             ->will(self::returnValue($sessionId));
         $manager
             ->expects(self::any())
-            ->method('isSessionDestroyed')
+            ->method('isDestroyed')
             ->will(self::returnValue(true));
         $manager
             ->expects(self::any())
@@ -542,7 +542,7 @@ class SessionTest extends SessionTestCase
             ->getMock();
         $manager
             ->expects(self::any())
-            ->method('getSessionId')
+            ->method('getId')
             ->will(self::returnValue($sessionId));
         $manager
             ->expects(self::any())
