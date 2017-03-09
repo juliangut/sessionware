@@ -49,6 +49,13 @@ class Session implements EmitterAwareInterface
     protected $data;
 
     /**
+     * Session shutdown method is registered.
+     *
+     * @var bool
+     */
+    protected $shutdownRegistered = false;
+
+    /**
      * Session constructor.
      *
      * @param Manager $sessionManager
@@ -66,8 +73,6 @@ class Session implements EmitterAwareInterface
         }
 
         $this->originalData = $this->data;
-
-        register_shutdown_function([$this, 'close']);
     }
 
     /**
@@ -89,6 +94,12 @@ class Session implements EmitterAwareInterface
     {
         if ($this->isActive()) {
             return;
+        }
+
+        if (!$this->shutdownRegistered) {
+            register_shutdown_function([$this, 'close']);
+
+            $this->shutdownRegistered = true;
         }
 
         $this->emit(Event::named('preStart'), $this);
