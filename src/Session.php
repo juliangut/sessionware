@@ -28,6 +28,13 @@ class Session implements EmitterAwareInterface
     use EmitterTrait;
 
     /**
+     * Session configuration.
+     *
+     * @var Configuration
+     */
+    protected $configuration;
+
+    /**
      * Session manager.
      *
      * @var Manager
@@ -66,6 +73,7 @@ class Session implements EmitterAwareInterface
     public function __construct(Manager $sessionManager, array $initialData = [])
     {
         $this->sessionManager = $sessionManager;
+        $this->configuration = $sessionManager->getConfiguration();
         $this->data = [];
 
         foreach ($initialData as $key => $value) {
@@ -241,7 +249,7 @@ class Session implements EmitterAwareInterface
     public function loadIdFromRequest(ServerRequestInterface $request)
     {
         $requestCookies = $request->getCookieParams();
-        $sessionName = $this->getConfiguration()->getName();
+        $sessionName = $this->configuration->getName();
 
         if (array_key_exists($sessionName, $requestCookies) && !empty($requestCookies[$sessionName])) {
             $this->setId($requestCookies[$sessionName]);
@@ -351,10 +359,10 @@ class Session implements EmitterAwareInterface
      */
     public function clear() : self
     {
-        $timeoutKey = $this->getConfiguration()->getTimeoutKey();
+        $timeoutKey = $this->configuration->getTimeoutKey();
         $sessionTimeout = array_key_exists($timeoutKey, $this->data)
             ? $this->data[$timeoutKey]
-            : time() + $this->getConfiguration()->getLifetime();
+            : time() + $this->configuration->getLifetime();
 
         $this->data = [$timeoutKey => $sessionTimeout];
 
@@ -368,8 +376,7 @@ class Session implements EmitterAwareInterface
      */
     protected function manageTimeout()
     {
-        $configuration = $this->getConfiguration();
-        $timeoutKey = $configuration->getTimeoutKey();
+        $timeoutKey = $this->configuration->getTimeoutKey();
 
         if (array_key_exists($timeoutKey, $this->data) && $this->data[$timeoutKey] < time()) {
             $this->emit(Event::named('preTimeout'), $this);
@@ -379,7 +386,7 @@ class Session implements EmitterAwareInterface
             $this->emit(Event::named('postTimeout'), $this);
         }
 
-        $this->data[$timeoutKey] = time() + $configuration->getLifetime();
+        $this->data[$timeoutKey] = time() + $this->configuration->getLifetime();
     }
 
     /**
@@ -425,11 +432,9 @@ class Session implements EmitterAwareInterface
      */
     protected function getExpiredCookieString() : string
     {
-        $configuration = $this->getConfiguration();
-
         return sprintf(
             '%s=%s; %s',
-            urlencode($configuration->getName()),
+            urlencode($this->configuration->getName()),
             urlencode($this->getId()),
             $this->getCookieParameters(0, 1)
         );
@@ -442,17 +447,15 @@ class Session implements EmitterAwareInterface
      */
     protected function getInitiatedCookieString() : string
     {
-        $configuration = $this->getConfiguration();
-
-        $lifetime = $configuration->getLifetime();
-        $timeoutKey = $configuration->getTimeoutKey();
+        $lifetime = $this->configuration->getLifetime();
+        $timeoutKey = $this->configuration->getTimeoutKey();
         $expireTime = array_key_exists($timeoutKey, $this->data)
             ? $this->data[$timeoutKey]
             : time() + $lifetime;
 
         return sprintf(
             '%s=%s; %s',
-            urlencode($configuration->getName()),
+            urlencode($this->configuration->getName()),
             urlencode($this->getId()),
             $this->getCookieParameters($expireTime, $lifetime)
         );
@@ -468,14 +471,12 @@ class Session implements EmitterAwareInterface
      */
     protected function getCookieParameters(int $expireTime, int $lifetime) : string
     {
-        $configuration = $this->getConfiguration();
-
         $cookieParams = [
             sprintf('expires=%s; max-age=%s', gmdate('D, d M Y H:i:s T', $expireTime), $lifetime),
         ];
 
-        if (!empty($configuration->getCookiePath())) {
-            $cookieParams[] = 'path=' . $configuration->getCookiePath();
+        if (!empty($this->configuration->getCookiePath())) {
+            $cookieParams[] = 'path=' . $this->configuration->getCookiePath();
         }
 
         $domain = $this->getCookieDomain();
@@ -483,15 +484,15 @@ class Session implements EmitterAwareInterface
             $cookieParams[] = 'domain=' . $domain;
         }
 
-        if ($configuration->isCookieSecure()) {
+        if ($this->configuration->isCookieSecure()) {
             $cookieParams[] = 'secure';
         }
 
-        if ($configuration->isCookieHttpOnly()) {
+        if ($this->configuration->isCookieHttpOnly()) {
             $cookieParams[] = 'httponly';
         }
 
-        $cookieParams[] = 'SameSite=' . $configuration->getCookieSameSite();
+        $cookieParams[] = 'SameSite=' . $this->configuration->getCookieSameSite();
 
         return implode('; ', $cookieParams);
     }
@@ -503,9 +504,7 @@ class Session implements EmitterAwareInterface
      */
     protected function getCookieDomain() : string
     {
-        $configuration = $this->getConfiguration();
-
-        $domain = $configuration->getCookieDomain();
+        $domain = $this->configuration->getCookieDomain();
 
         // Current domain for local host names or IP addresses
         if (empty($domain)
@@ -516,15 +515,5 @@ class Session implements EmitterAwareInterface
         }
 
         return $domain[0] === '.' ? $domain : '.' . $domain;
-    }
-
-    /**
-     * Get session configuration.
-     *
-     * @return Configuration
-     */
-    protected function getConfiguration() : Configuration
-    {
-        return $this->sessionManager->getConfiguration();
     }
 }
