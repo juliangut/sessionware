@@ -17,11 +17,12 @@ use Jgut\Sessionware\Manager\Manager;
 use League\Event\EmitterAwareInterface;
 use League\Event\EmitterTrait;
 use League\Event\Event;
-use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Session helper.
+ *
+ * @SuppressWarnings(PMD.TooManyPublicMethods)
  */
 class Session implements EmitterAwareInterface
 {

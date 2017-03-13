@@ -23,7 +23,7 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "php": ">=7.0",
+    "php": "^7.0",
     "league/event": "^2.1",
     "psr/http-message": "^1.0"
   },
@@ -33,7 +33,6 @@
     "humbug/humbug": "~1.0@dev",
     "mikey179/vfsStream": "^1.6",
     "phpmd/phpmd": "^2.0",
-    "phpstan/phpstan": "~0.5",
     "phpunit/phpunit": "^5.7|6.0",
     "predis/predis": "^1.1",
     "sebastian/phpcpd": "^2.0",
@@ -64,7 +63,6 @@
     "phpcs": "phpcs --standard=PSR2 src tests",
     "phpcs-lint": "php-cs-fixer fix --dry-run --verbose",
     "phpcpd": "phpcpd src",
-    "phpstan": "phpstan analyse --level 1 src tests",
     "phpmd": "phpmd src text unusedcode,naming,design,controversial,codesize",
     "phpunit": "phpunit",
     "phpunit-coverage": "phpunit --coverage-html build/coverage",
@@ -75,7 +73,6 @@
       "@phpcs",
       "@phpcs-lint",
       "@phpcpd",
-      "@phpstan",
       "@phpmd"
     ],
     "fix": "php-cs-fixer fix --verbose",
