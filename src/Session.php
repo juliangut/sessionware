@@ -24,7 +24,7 @@ use Psr\Http\Message\ServerRequestInterface;
  *
  * @SuppressWarnings(PMD.TooManyPublicMethods)
  */
-class Session implements EmitterAwareInterface
+class Session implements EmitterAwareInterface, \ArrayAccess
 {
     use EmitterTrait;
 
@@ -282,6 +282,38 @@ class Session implements EmitterAwareInterface
         }
 
         $this->data->set($timeoutKey, time() + $this->configuration->getLifetime());
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function offsetExists($offset)
+    {
+        return $this->has($offset);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function offsetGet($offset)
+    {
+        return $this->get($offset);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function offsetSet($offset, $value)
+    {
+        $this->set($offset, $value);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function offsetUnset($offset)
+    {
+        $this->remove($offset);
     }
 
     /**

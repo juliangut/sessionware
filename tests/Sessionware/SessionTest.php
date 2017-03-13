@@ -81,19 +81,23 @@ class SessionTest extends SessionTestCase
         $session = new Session($manager, [$this->configuration->getTimeoutKey() => $timeout]);
 
         self::assertTrue($session->has($this->configuration->getTimeoutKey()));
+        self::assertTrue(isset($session[$this->configuration->getTimeoutKey()]));
 
         $session->set('sessionKeyOne', 'sessionValueOne');
         self::assertTrue($session->has('sessionKeyOne'));
         self::assertEquals('sessionValueOne', $session->get('sessionKeyOne'));
+        self::assertEquals('sessionValueOne', $session['sessionKeyOne']);
 
         $session->remove('sessionKeyOne');
         self::assertFalse($session->has('sessionKeyOne'));
         self::assertEquals('noValue', $session->get('sessionKeyOne', 'noValue'));
+        self::assertNull($session['sessionKeyOne']);
 
-        $session->set('sessionKeyTwo', 'sessionValueTwo');
+        $session['sessionKeyTwo'] = 'sessionValueTwo';
+        unset($session['sessionKeyTwo']);
+        self::assertFalse($session->has('sessionKeyTwo'));
 
         $session->clear();
-        self::assertFalse($session->has('sessionKeyTwo'));
         self::assertTrue($session->has($this->configuration->getTimeoutKey()));
         self::assertEquals($timeout, $session->get($this->configuration->getTimeoutKey()));
     }
@@ -110,7 +114,7 @@ class SessionTest extends SessionTestCase
         $manager
             ->expects(self::once())
             ->method('start')
-            ->will(self::returnValue([]));
+            ->will(self::returnValue(['key' => 'value']));
         $manager
             ->expects(self::any())
             ->method('shouldRegenerateId')
