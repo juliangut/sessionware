@@ -23,6 +23,7 @@ use Psr\Http\Message\ServerRequestInterface;
  * Session helper.
  *
  * @SuppressWarnings(PMD.TooManyPublicMethods)
+ * @SuppressWarnings(PMD.ExcessiveClassComplexity)
  */
 class Session implements EmitterAwareInterface, \ArrayAccess
 {
