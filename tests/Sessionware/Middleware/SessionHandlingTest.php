@@ -111,10 +111,6 @@ class SessionHandlingTest extends SessionTestCase
         $session = $this->getMockBuilder(Session::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $session
-            ->expects(self::any())
-            ->method('getManager')
-            ->will(self::returnValue($manager));
         /* @var Session $session */
 
         $middleware = new SessionHandling($session);

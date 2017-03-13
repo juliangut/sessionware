@@ -44,14 +44,14 @@ class Session implements EmitterAwareInterface
     /**
      * Session initial data.
      *
-     * @var array
+     * @var Collection
      */
     protected $originalData;
 
     /**
      * Session data.
      *
-     * @var array
+     * @var Collection
      */
     protected $data;
 
@@ -74,23 +74,72 @@ class Session implements EmitterAwareInterface
     {
         $this->sessionManager = $sessionManager;
         $this->configuration = $sessionManager->getConfiguration();
-        $this->data = [];
 
-        foreach ($initialData as $key => $value) {
-            $this->set($key, $value);
-        }
-
-        $this->originalData = $this->data;
+        $this->data = new Collection($initialData);
+        $this->originalData = clone $this->data;
     }
 
     /**
-     * Get session manager.
+     * Has session been started.
      *
-     * @return Manager
+     * @return bool
      */
-    public function getManager() : Manager
+    public function isActive() : bool
     {
-        return $this->sessionManager;
+        return $this->sessionManager->isStarted();
+    }
+
+    /**
+     * Has session been destroyed.
+     *
+     * @return bool
+     */
+    public function isDestroyed() : bool
+    {
+        return $this->sessionManager->isDestroyed();
+    }
+
+    /**
+     * Get session identifier.
+     *
+     * @return string
+     */
+    public function getId() : string
+    {
+        return $this->sessionManager->getId();
+    }
+
+    /**
+     * Set session identifier.
+     *
+     * @param string $sessionId
+     *
+     * @throws \RuntimeException
+     */
+    public function setId(string $sessionId)
+    {
+        if ($this->isActive() || $this->isDestroyed()) {
+            throw new \RuntimeException('Cannot set session id on started or destroyed sessions');
+        }
+
+        $this->sessionManager->setId($sessionId);
+    }
+
+    /**
+     * Load session identifier from request.
+     *
+     * @param ServerRequestInterface $request
+     *
+     * @throws \RuntimeException
+     */
+    public function loadIdFromRequest(ServerRequestInterface $request)
+    {
+        $requestCookies = $request->getCookieParams();
+        $sessionName = $this->configuration->getName();
+
+        if (array_key_exists($sessionName, $requestCookies) && !empty($requestCookies[$sessionName])) {
+            $this->setId($requestCookies[$sessionName]);
+        }
     }
 
     /**
@@ -112,7 +161,10 @@ class Session implements EmitterAwareInterface
 
         $this->emit(Event::named('preStart'), $this);
 
-        $this->originalData = $this->data = array_merge($this->data, $this->sessionManager->start());
+        foreach ($this->sessionManager->start() as $key => $value) {
+            $this->set($key, $value);
+        }
+        $this->originalData = clone $this->data;
 
         if ($this->sessionManager->shouldRegenerateId()) {
             $this->regenerateId();
@@ -152,7 +204,7 @@ class Session implements EmitterAwareInterface
 
         $this->emit(Event::named('preReset'), $this);
 
-        $this->data = $this->originalData;
+        $this->data = clone $this->originalData;
 
         $this->emit(Event::named('postReset'), $this);
     }
@@ -168,7 +220,7 @@ class Session implements EmitterAwareInterface
 
         $this->emit(Event::named('preAbort'), $this);
 
-        $this->sessionManager->close($this->originalData);
+        $this->sessionManager->close($this->originalData->getAll());
 
         $this->emit(Event::named('postAbort'), $this);
     }
@@ -184,7 +236,7 @@ class Session implements EmitterAwareInterface
 
         $this->emit(Event::named('preClose'), $this);
 
-        $this->sessionManager->close($this->data);
+        $this->sessionManager->close($this->data->getAll());
 
         $this->emit(Event::named('postClose'), $this);
     }
@@ -206,70 +258,29 @@ class Session implements EmitterAwareInterface
 
         $this->emit(Event::named('postDestroy'), $this);
 
-        $this->originalData = $this->data = [];
+        $this->originalData = new Collection();
+        $this->data = new Collection();
     }
 
     /**
-     * Has session been started.
-     *
-     * @return bool
-     */
-    public function isActive() : bool
-    {
-        return $this->sessionManager->isStarted();
-    }
-
-    /**
-     * Has session been destroyed.
-     *
-     * @return bool
-     */
-    public function isDestroyed() : bool
-    {
-        return $this->sessionManager->isDestroyed();
-    }
-
-    /**
-     * Get session identifier.
-     *
-     * @return string
-     */
-    public function getId() : string
-    {
-        return $this->sessionManager->getId();
-    }
-
-    /**
-     * Load session identifier from request.
-     *
-     * @param ServerRequestInterface $request
+     * Manage session timeout.
      *
      * @throws \RuntimeException
      */
-    public function loadIdFromRequest(ServerRequestInterface $request)
+    protected function manageTimeout()
     {
-        $requestCookies = $request->getCookieParams();
-        $sessionName = $this->configuration->getName();
+        $timeoutKey = $this->configuration->getTimeoutKey();
+        $sessionTimeout = $this->data->get($timeoutKey);
 
-        if (array_key_exists($sessionName, $requestCookies) && !empty($requestCookies[$sessionName])) {
-            $this->setId($requestCookies[$sessionName]);
-        }
-    }
+        if ($sessionTimeout && $sessionTimeout < time()) {
+            $this->emit(Event::named('preTimeout'), $this);
 
-    /**
-     * Set session identifier.
-     *
-     * @param string $sessionId
-     *
-     * @throws \RuntimeException
-     */
-    public function setId(string $sessionId)
-    {
-        if ($this->isActive() || $this->isDestroyed()) {
-            throw new \RuntimeException('Cannot set session id on started or destroyed sessions');
+            $this->sessionManager->regenerateId();
+
+            $this->emit(Event::named('postTimeout'), $this);
         }
 
-        $this->sessionManager->setId($sessionId);
+        $this->data->set($timeoutKey, time() + $this->configuration->getLifetime());
     }
 
     /**
@@ -281,7 +292,7 @@ class Session implements EmitterAwareInterface
      */
     public function has(string $key) : bool
     {
-        return array_key_exists($key, $this->data);
+        return $this->data->has($key);
     }
 
     /**
@@ -294,7 +305,7 @@ class Session implements EmitterAwareInterface
      */
     public function get(string $key, $default = null)
     {
-        return array_key_exists($key, $this->data) ? $this->data[$key] : $default;
+        return $this->data->get($key, $default);
     }
 
     /**
@@ -309,31 +320,9 @@ class Session implements EmitterAwareInterface
      */
     public function set(string $key, $value) : self
     {
-        $this->verifyScalarValue($value);
-
-        $this->data[$key] = $value;
+        $this->data->set($key, $value);
 
         return $this;
-    }
-
-    /**
-     * Verify only scalar values allowed.
-     *
-     * @param string|int|float|bool|array $value
-     *
-     * @throws \InvalidArgumentException
-     */
-    final protected function verifyScalarValue($value)
-    {
-        if (is_array($value)) {
-            foreach ($value as $val) {
-                $this->verifyScalarValue($val);
-            }
-        }
-
-        if (!is_scalar($value)) {
-            throw new \InvalidArgumentException(sprintf('Session values must be scalars, %s given', gettype($value)));
-        }
     }
 
     /**
@@ -345,9 +334,7 @@ class Session implements EmitterAwareInterface
      */
     public function remove(string $key) : self
     {
-        if (array_key_exists($key, $this->data)) {
-            unset($this->data[$key]);
-        }
+        $this->data->remove($key);
 
         return $this;
     }
@@ -360,51 +347,12 @@ class Session implements EmitterAwareInterface
     public function clear() : self
     {
         $timeoutKey = $this->configuration->getTimeoutKey();
-        $sessionTimeout = array_key_exists($timeoutKey, $this->data)
-            ? $this->data[$timeoutKey]
-            : time() + $this->configuration->getLifetime();
+        $sessionTimeout = $this->data->get($timeoutKey, time() + $this->configuration->getLifetime());
 
-        $this->data = [$timeoutKey => $sessionTimeout];
+        $this->data->clear();
+        $this->data->set($timeoutKey, $sessionTimeout);
 
         return $this;
-    }
-
-    /**
-     * Manage session timeout.
-     *
-     * @throws \RuntimeException
-     */
-    protected function manageTimeout()
-    {
-        $timeoutKey = $this->configuration->getTimeoutKey();
-
-        if (array_key_exists($timeoutKey, $this->data) && $this->data[$timeoutKey] < time()) {
-            $this->emit(Event::named('preTimeout'), $this);
-
-            $this->sessionManager->regenerateId();
-
-            $this->emit(Event::named('postTimeout'), $this);
-        }
-
-        $this->data[$timeoutKey] = time() + $this->configuration->getLifetime();
-    }
-
-    /**
-     * Return response with added session cookie.
-     *
-     * @param ResponseInterface $response
-     *
-     * @return ResponseInterface
-     */
-    public function withSessionCookie(ResponseInterface $response) : ResponseInterface
-    {
-        $cookieString = $this->getSessionCookieString();
-
-        if (!empty($cookieString)) {
-            $response = $response->withAddedHeader('Set-Cookie', $cookieString);
-        }
-
-        return $response;
     }
 
     /**
@@ -449,9 +397,7 @@ class Session implements EmitterAwareInterface
     {
         $lifetime = $this->configuration->getLifetime();
         $timeoutKey = $this->configuration->getTimeoutKey();
-        $expireTime = array_key_exists($timeoutKey, $this->data)
-            ? $this->data[$timeoutKey]
-            : time() + $lifetime;
+        $expireTime = $this->data->get($timeoutKey, time() + $lifetime);
 
         return sprintf(
             '%s=%s; %s',

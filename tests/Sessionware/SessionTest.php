@@ -38,14 +38,12 @@ class SessionTest extends SessionTestCase
             ->disableOriginalConstructor()
             ->getMock();
         $manager
-            ->expects(self::any())
+            ->expects(self::once())
             ->method('getConfiguration')
             ->will(self::returnValue($this->configuration));
         /* @var \Jgut\Sessionware\Manager\Manager $manager */
 
-        $session = new Session($manager);
-
-        self::assertEquals($manager, $session->getManager());
+        new Session($manager);
     }
 
     /**

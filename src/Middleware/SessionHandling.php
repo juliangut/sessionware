@@ -74,7 +74,23 @@ class SessionHandling
 
         $this->session->close();
 
-        $response = $this->session->withSessionCookie($response);
+        return $this->withSessionCookie($response);
+    }
+
+    /**
+     * Return response with added session cookie.
+     *
+     * @param ResponseInterface $response
+     *
+     * @return ResponseInterface
+     */
+    protected function withSessionCookie(ResponseInterface $response) : ResponseInterface
+    {
+        $cookieString = $this->session->getSessionCookieString();
+
+        if (!empty($cookieString)) {
+            $response = $response->withAddedHeader('Set-Cookie', $cookieString);
+        }
 
         return $response;
     }
