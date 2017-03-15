@@ -33,6 +33,7 @@
     "humbug/humbug": "~1.0@dev",
     "mikey179/vfsStream": "^1.6",
     "phpmd/phpmd": "^2.0",
+    "phpmetrics/phpmetrics": "^1.10",
     "phpunit/phpunit": "^5.7|6.0",
     "predis/predis": "^1.1",
     "sebastian/phpcpd": "^2.0",
@@ -59,26 +60,33 @@
     "sort-packages": true
   },
   "scripts": {
-    "phplint": "php -l src && php -l tests",
+    "php-lint": "php -l src && php -l tests",
     "phpcs": "phpcs --standard=PSR2 src tests",
     "phpcs-lint": "php-cs-fixer fix --dry-run --verbose",
     "phpcpd": "phpcpd src",
     "phpmd": "phpmd src text unusedcode,naming,design,controversial,codesize",
+    "phpmetrics": "phpmetrics --failure-condition='average.maintainabilityIndex < 50' src",
+    "phpmetrics-report": "phpmetrics --report-html=build/metrics/index.html --offline src",
     "phpunit": "phpunit",
     "phpunit-coverage": "phpunit --coverage-html build/coverage",
     "phpunit-clover": "phpunit --coverage-clover build/logs/clover.xml",
     "humbug": "humbug",
     "qa": [
-      "@phplint",
+      "@php-lint",
       "@phpcs",
       "@phpcs-lint",
       "@phpcpd",
-      "@phpmd"
+      "@phpmd",
+      "@phpmetrics"
+    ],
+    "reports": [
+      "@phpmetrics-report",
+      "@phpunit-coverage"
     ],
     "fix": "php-cs-fixer fix --verbose",
     "security": "composer outdated",
     "test": [
-      "@qa",
+      "@php-lint",
       "@phpunit",
       "@humbug"
     ]
