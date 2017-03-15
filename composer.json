@@ -33,7 +33,7 @@
     "humbug/humbug": "~1.0@dev",
     "mikey179/vfsStream": "^1.6",
     "phpmd/phpmd": "^2.0",
-    "phpmetrics/phpmetrics": "^1.10",
+    "phpmetrics/phpmetrics": "^2.0",
     "phpunit/phpunit": "^5.7|6.0",
     "predis/predis": "^1.1",
     "sebastian/phpcpd": "^2.0",
