@@ -30,9 +30,9 @@ matrix:
     - php: nightly
 
 before_install:
-  - if [[ $TEST_VERSION && -f "/home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini" ]]; then phpenv config-rm xdebug.ini; fi
-  - echo "extension = memcached.so" >> $INI_FILE
-  - echo "extension = redis.so" >> $INI_FILE
+  - echo "extension = memcached.so" >> /home/travis/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - echo "extension = redis.so" >> /home/travis/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - if [[ -z $TEST_VERSION && -f "/home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini" ]]; then phpenv config-rm xdebug.ini; fi
   - composer global require hirak/prestissimo
   - composer self-update --stable --no-progress
 
