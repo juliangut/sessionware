@@ -9,6 +9,8 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
+declare(strict_types=1);
+
 namespace Jgut\Sessionware\Traits;
 
 use Jgut\Sessionware\Configuration;
@@ -28,7 +30,7 @@ trait FileHandlerTrait
      *
      * @return string
      */
-    protected function createSavePath(string $savePath, string $sessionName) : string
+    protected function createSavePath(string $savePath, string $sessionName): string
     {
         $savePathParts = explode(DIRECTORY_SEPARATOR, rtrim($savePath, DIRECTORY_SEPARATOR));
         if ($sessionName !== Configuration::SESSION_NAME_DEFAULT && $sessionName !== array_pop($savePathParts)) {

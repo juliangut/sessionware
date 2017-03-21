@@ -164,7 +164,7 @@ class Filesystem implements Handler
      *
      * @return string
      */
-    protected function getSessionFile(string $sessionId) : string
+    protected function getSessionFile(string $sessionId): string
     {
         return $this->savePath . DIRECTORY_SEPARATOR . $this->filePrefix . $sessionId;
     }

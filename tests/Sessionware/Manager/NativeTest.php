@@ -74,7 +74,7 @@ class NativeTest extends SessionTestCase
      *
      * @return array
      */
-    public function invalidIniSettingsProvider() : array
+    public function invalidIniSettingsProvider(): array
     {
         return [
             ['session.use_trans_sid', '1'],

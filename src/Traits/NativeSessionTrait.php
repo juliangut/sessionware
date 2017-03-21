@@ -9,6 +9,8 @@
  * @author Julián Gutiérrez <juliangut@gmail.com>
  */
 
+declare(strict_types=1);
+
 namespace Jgut\Sessionware\Traits;
 
 /**
@@ -35,7 +37,7 @@ trait NativeSessionTrait
      *
      * @return string
      */
-    protected function getStringIniSetting(string $setting, string $default = '') : string
+    protected function getStringIniSetting(string $setting, string $default = ''): string
     {
         $setting = $this->getIniSetting($setting);
 
@@ -50,7 +52,7 @@ trait NativeSessionTrait
      *
      * @return int
      */
-    protected function getIntegerIniSetting(string $setting, int $default = 0) : int
+    protected function getIntegerIniSetting(string $setting, int $default = 0): int
     {
         $setting = $this->getIniSetting($setting);
 
@@ -64,7 +66,7 @@ trait NativeSessionTrait
      *
      * @return bool
      */
-    protected function hasBoolIniSetting(string $setting) : bool
+    protected function hasBoolIniSetting(string $setting): bool
     {
         return (bool) $this->getIniSetting($setting);
     }
@@ -76,7 +78,7 @@ trait NativeSessionTrait
      *
      * @return string
      */
-    private function getIniSetting(string $setting) : string
+    private function getIniSetting(string $setting): string
     {
         return (string) ini_get($this->normalizeSessionIniSetting($setting));
     }
@@ -88,7 +90,7 @@ trait NativeSessionTrait
      *
      * @return string
      */
-    private function normalizeSessionIniSetting(string $setting) : string
+    private function normalizeSessionIniSetting(string $setting): string
     {
         return strpos($setting, 'session.') !== 0 ? 'session.' . $setting : $setting;
     }

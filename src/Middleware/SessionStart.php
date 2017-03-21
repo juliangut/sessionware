@@ -37,7 +37,7 @@ class SessionStart
         ServerRequestInterface $request,
         ResponseInterface $response,
         callable $next
-    ) : ResponseInterface {
+    ): ResponseInterface {
         $session = SessionHandling::getSession($request);
 
         if (!$session instanceof Session) {

@@ -39,7 +39,7 @@ class SessionStartTest extends SessionTestCase
             return $response;
         };
 
-        $middleware(ServerRequestFactory::fromGlobals(), new Response, $callback);
+        $middleware(ServerRequestFactory::fromGlobals(), new Response(), $callback);
     }
 
     public function testSessionStart()
@@ -58,6 +58,6 @@ class SessionStartTest extends SessionTestCase
             return $response;
         };
 
-        $middleware($request, new Response, $callback);
+        $middleware($request, new Response(), $callback);
     }
 }

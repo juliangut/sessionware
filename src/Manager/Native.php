@@ -83,7 +83,7 @@ class Native implements Manager
     /**
      * {@inheritdoc}
      */
-    public function getConfiguration() : Configuration
+    public function getConfiguration(): Configuration
     {
         return $this->configuration;
     }
@@ -91,7 +91,7 @@ class Native implements Manager
     /**
      * {@inheritdoc}
      */
-    public function getId() : string
+    public function getId(): string
     {
         return !empty($this->sessionId) ? $this->sessionId : '';
     }
@@ -117,7 +117,7 @@ class Native implements Manager
      *
      * @return array
      */
-    public function start() : array
+    public function start(): array
     {
         $this->verifyIniSettings();
 
@@ -216,7 +216,7 @@ class Native implements Manager
     /**
      * {@inheritdoc}
      */
-    public function shouldRegenerateId() : bool
+    public function shouldRegenerateId(): bool
     {
         return !empty($this->sessionId) && strlen($this->sessionId) !== Configuration::SESSION_ID_LENGTH;
     }
@@ -314,7 +314,7 @@ class Native implements Manager
     /**
      * {@inheritdoc}
      */
-    public function isStarted() : bool
+    public function isStarted(): bool
     {
         return $this->sessionStarted;
     }
@@ -322,7 +322,7 @@ class Native implements Manager
     /**
      * {@inheritdoc}
      */
-    public function isDestroyed() : bool
+    public function isDestroyed(): bool
     {
         return $this->sessionDestroyed;
     }
@@ -374,7 +374,7 @@ class Native implements Manager
      *
      * @return string
      */
-    private function getNewSessionId(int $length) : string
+    private function getNewSessionId(int $length): string
     {
         return substr(
             preg_replace('/[^a-zA-Z0-9-]+/', '', base64_encode(random_bytes($length))),

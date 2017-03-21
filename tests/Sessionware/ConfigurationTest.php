@@ -43,12 +43,12 @@ class ConfigurationTest extends TestCase
     public function testFromEnvironment()
     {
         $configs = [
-            'name'           => 'SESSION',
-            'savePath'       => sys_get_temp_dir() . '/SESS',
-            'lifetime'       => Configuration::LIFETIME_SHORT,
-            'cookiePath'     => '/path',
-            'cookieDomain'   => 'example.com',
-            'cookieSecure'   => true,
+            'name' => 'SESSION',
+            'savePath' => sys_get_temp_dir() . '/SESS',
+            'lifetime' => Configuration::LIFETIME_SHORT,
+            'cookiePath' => '/path',
+            'cookieDomain' => 'example.com',
+            'cookieSecure' => true,
             'cookieHttpOnly' => true,
         ];
 
@@ -75,16 +75,16 @@ class ConfigurationTest extends TestCase
     public function testFromConfigurations()
     {
         $configs = [
-            'name'           => 'SESSION',
-            'savePath'       => sys_get_temp_dir() . '/SESS',
-            'lifetime'       => Configuration::LIFETIME_SHORT,
-            'cookiePath'     => '/path',
-            'cookieDomain'   => 'example.com',
-            'cookieSecure'   => true,
+            'name' => 'SESSION',
+            'savePath' => sys_get_temp_dir() . '/SESS',
+            'lifetime' => Configuration::LIFETIME_SHORT,
+            'cookiePath' => '/path',
+            'cookieDomain' => 'example.com',
+            'cookieSecure' => true,
             'cookieHttpOnly' => true,
             'cookieSameSite' => Configuration::SAME_SITE_STRICT,
-            'timeoutKey'     => '__CUSTOM_TIMEOUT__',
-            'encryptionKey'  => Key::createNewRandomKey(),
+            'timeoutKey' => '__CUSTOM_TIMEOUT__',
+            'encryptionKey' => Key::createNewRandomKey(),
         ];
 
         $configuration = new Configuration($configs);

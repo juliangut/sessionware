@@ -86,7 +86,7 @@ class Session implements EmitterAwareInterface, \ArrayAccess
      *
      * @return bool
      */
-    public function isActive() : bool
+    public function isActive(): bool
     {
         return $this->sessionManager->isStarted();
     }
@@ -96,7 +96,7 @@ class Session implements EmitterAwareInterface, \ArrayAccess
      *
      * @return bool
      */
-    public function isDestroyed() : bool
+    public function isDestroyed(): bool
     {
         return $this->sessionManager->isDestroyed();
     }
@@ -106,7 +106,7 @@ class Session implements EmitterAwareInterface, \ArrayAccess
      *
      * @return string
      */
-    public function getId() : string
+    public function getId(): string
     {
         return $this->sessionManager->getId();
     }
@@ -324,7 +324,7 @@ class Session implements EmitterAwareInterface, \ArrayAccess
      *
      * @return bool
      */
-    public function has(string $key) : bool
+    public function has(string $key): bool
     {
         return $this->data->has($key);
     }
@@ -352,7 +352,7 @@ class Session implements EmitterAwareInterface, \ArrayAccess
      *
      * @return self
      */
-    public function set(string $key, $value) : self
+    public function set(string $key, $value): self
     {
         $this->data->set($key, $value);
 
@@ -366,7 +366,7 @@ class Session implements EmitterAwareInterface, \ArrayAccess
      *
      * @return self
      */
-    public function remove(string $key) : self
+    public function remove(string $key): self
     {
         $this->data->remove($key);
 
@@ -378,7 +378,7 @@ class Session implements EmitterAwareInterface, \ArrayAccess
      *
      * @return self
      */
-    public function clear() : self
+    public function clear(): self
     {
         $timeoutKey = $this->configuration->getTimeoutKey();
         $sessionTimeout = $this->data->get($timeoutKey, time() + $this->configuration->getLifetime());
@@ -394,7 +394,7 @@ class Session implements EmitterAwareInterface, \ArrayAccess
      *
      * @return string
      */
-    public function getSessionCookieString() : string
+    public function getSessionCookieString(): string
     {
         if (empty($this->getId())) {
             return '';
@@ -412,7 +412,7 @@ class Session implements EmitterAwareInterface, \ArrayAccess
      *
      * @return string
      */
-    protected function getExpiredCookieString() : string
+    protected function getExpiredCookieString(): string
     {
         return sprintf(
             '%s=%s; %s',
@@ -427,7 +427,7 @@ class Session implements EmitterAwareInterface, \ArrayAccess
      *
      * @return string
      */
-    protected function getInitiatedCookieString() : string
+    protected function getInitiatedCookieString(): string
     {
         $lifetime = $this->configuration->getLifetime();
         $timeoutKey = $this->configuration->getTimeoutKey();
@@ -449,7 +449,7 @@ class Session implements EmitterAwareInterface, \ArrayAccess
      *
      * @return string
      */
-    protected function getCookieParameters(int $expireTime, int $lifetime) : string
+    protected function getCookieParameters(int $expireTime, int $lifetime): string
     {
         $cookieParams = [
             sprintf('expires=%s; max-age=%s', gmdate('D, d M Y H:i:s T', $expireTime), $lifetime),
@@ -482,7 +482,7 @@ class Session implements EmitterAwareInterface, \ArrayAccess
      *
      * @return string
      */
-    protected function getCookieDomain() : string
+    protected function getCookieDomain(): string
     {
         $domain = $this->configuration->getCookieDomain();
 

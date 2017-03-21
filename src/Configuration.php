@@ -30,10 +30,10 @@ class Configuration
     const SAME_SITE_LAX = 'Lax';
     const SAME_SITE_STRICT = 'Strict';
 
-    const LIFETIME_FLASH    = 300; // 5 minutes
-    const LIFETIME_SHORT    = 600; // 10 minutes
-    const LIFETIME_NORMAL   = 900; // 15 minutes
-    const LIFETIME_DEFAULT  = 1440; // 24 minutes
+    const LIFETIME_FLASH = 300; // 5 minutes
+    const LIFETIME_SHORT = 600; // 10 minutes
+    const LIFETIME_NORMAL = 900; // 15 minutes
+    const LIFETIME_DEFAULT = 1440; // 24 minutes
     const LIFETIME_EXTENDED = 3600; // 1 hour
 
     const LIFETIME_INFINITE = PHP_INT_MAX; // Around 1145 years (x86_64)
@@ -108,7 +108,7 @@ class Configuration
      *
      * @return array
      */
-    protected function getDefaultSessionSettings() : array
+    protected function getDefaultSessionSettings(): array
     {
         $sessionLifetime = $this->getIntegerIniSetting('cookie_lifetime') === 0
             ? $this->getIntegerIniSetting('gc_maxlifetime')
@@ -116,15 +116,15 @@ class Configuration
         $sessionName = session_name() !== static::SESSION_NAME_DEFAULT ? session_name() : static::SESSION_NAME_DEFAULT;
 
         return [
-            'name'           => $this->getStringIniSetting('name', $sessionName),
-            'savePath'       => $this->getStringIniSetting('save_path', sys_get_temp_dir()),
-            'lifetime'       => $sessionLifetime > 0 ? $sessionLifetime : static::LIFETIME_DEFAULT,
-            'cookiePath'     => $this->getStringIniSetting('cookie_path', '/'),
-            'cookieDomain'   => $this->getStringIniSetting('cookie_domain'),
-            'cookieSecure'   => $this->hasBoolIniSetting('cookie_secure'),
+            'name' => $this->getStringIniSetting('name', $sessionName),
+            'savePath' => $this->getStringIniSetting('save_path', sys_get_temp_dir()),
+            'lifetime' => $sessionLifetime > 0 ? $sessionLifetime : static::LIFETIME_DEFAULT,
+            'cookiePath' => $this->getStringIniSetting('cookie_path', '/'),
+            'cookieDomain' => $this->getStringIniSetting('cookie_domain'),
+            'cookieSecure' => $this->hasBoolIniSetting('cookie_secure'),
             'cookieHttpOnly' => $this->hasBoolIniSetting('cookie_httponly'),
             'cookieSameSite' => static::SAME_SITE_LAX,
-            'timeoutKey'     => static::TIMEOUT_KEY_DEFAULT,
+            'timeoutKey' => static::TIMEOUT_KEY_DEFAULT,
         ];
     }
 
@@ -162,7 +162,7 @@ class Configuration
      *
      * @return string
      */
-    public function getName() : string
+    public function getName(): string
     {
         return $this->name;
     }
@@ -192,7 +192,7 @@ class Configuration
      *
      * @return string
      */
-    public function getCookiePath() : string
+    public function getCookiePath(): string
     {
         return $this->cookiePath;
     }
@@ -216,7 +216,7 @@ class Configuration
      *
      * @return string
      */
-    public function getCookieDomain() : string
+    public function getCookieDomain(): string
     {
         return $this->cookieDomain;
     }
@@ -240,7 +240,7 @@ class Configuration
      *
      * @return bool
      */
-    public function isCookieSecure() : bool
+    public function isCookieSecure(): bool
     {
         return $this->cookieSecure;
     }
@@ -264,7 +264,7 @@ class Configuration
      *
      * @return bool
      */
-    public function isCookieHttpOnly() : bool
+    public function isCookieHttpOnly(): bool
     {
         return $this->cookieHttpOnly;
     }
@@ -316,7 +316,7 @@ class Configuration
      *
      * @return string
      */
-    public function getSavePath() : string
+    public function getSavePath(): string
     {
         return $this->savePath;
     }
@@ -346,7 +346,7 @@ class Configuration
      *
      * @return int
      */
-    public function getLifetime() : int
+    public function getLifetime(): int
     {
         return $this->lifetime;
     }
@@ -388,7 +388,7 @@ class Configuration
      *
      * @return self
      */
-    public function setEncryptionKey(Key $encryptionKey) : self
+    public function setEncryptionKey(Key $encryptionKey): self
     {
         $this->encryptionKey = $encryptionKey;
 
@@ -400,7 +400,7 @@ class Configuration
      *
      * @return string
      */
-    public function getTimeoutKey() : string
+    public function getTimeoutKey(): string
     {
         return $this->timeoutKey;
     }
@@ -414,7 +414,7 @@ class Configuration
      *
      * @return self
      */
-    public function setTimeoutKey(string $timeoutKey) : self
+    public function setTimeoutKey(string $timeoutKey): self
     {
         if (trim($timeoutKey) === '') {
             throw new \InvalidArgumentException('Session timeout key must be a non empty string');

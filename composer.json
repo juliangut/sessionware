@@ -29,7 +29,7 @@
   },
   "require-dev": {
     "defuse/php-encryption": "^2.0",
-    "friendsofphp/php-cs-fixer": "^1.12",
+    "friendsofphp/php-cs-fixer": "^2.0",
     "humbug/humbug": "~1.0@dev",
     "mikey179/vfsStream": "^1.6",
     "phpmd/phpmd": "^2.0",

@@ -37,7 +37,7 @@ class HandlerStub
      *
      * @return string
      */
-    public function encryptData(string $plainData) : string
+    public function encryptData(string $plainData): string
     {
         return $this->encryptSessionData($plainData);
     }

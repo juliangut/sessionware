@@ -66,7 +66,7 @@ class SessionHandling
         ServerRequestInterface $request,
         ResponseInterface $response,
         callable $next
-    ) : ResponseInterface {
+    ): ResponseInterface {
         $this->session->loadIdFromRequest($request);
 
         /* @var ResponseInterface $response */
@@ -84,7 +84,7 @@ class SessionHandling
      *
      * @return ResponseInterface
      */
-    protected function withSessionCookie(ResponseInterface $response) : ResponseInterface
+    protected function withSessionCookie(ResponseInterface $response): ResponseInterface
     {
         $cookieString = $this->session->getSessionCookieString();
 

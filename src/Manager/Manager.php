@@ -25,14 +25,14 @@ interface Manager
      *
      * @return \Jgut\Sessionware\Configuration
      */
-    public function getConfiguration() : Configuration;
+    public function getConfiguration(): Configuration;
 
     /**
      * Get session identifier.
      *
      * @return string
      */
-    public function getId() : string;
+    public function getId(): string;
 
     /**
      * @param string $sessionId
@@ -46,7 +46,7 @@ interface Manager
      *
      * @return array
      */
-    public function start() : array;
+    public function start(): array;
 
     /**
      * Save session data and end session.
@@ -60,7 +60,7 @@ interface Manager
      *
      * @return bool
      */
-    public function shouldRegenerateId() : bool;
+    public function shouldRegenerateId(): bool;
 
     /**
      * Regenerate session identifier.
@@ -77,12 +77,12 @@ interface Manager
      *
      * @return bool
      */
-    public function isStarted() : bool;
+    public function isStarted(): bool;
 
     /**
      * Has session been destroyed.
      *
      * @return bool
      */
-    public function isDestroyed() : bool;
+    public function isDestroyed(): bool;
 }

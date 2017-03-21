@@ -62,7 +62,7 @@ trait HandlerTrait
      *
      * @return string
      */
-    protected function encryptSessionData(string $plainData) : string
+    protected function encryptSessionData(string $plainData): string
     {
         if (!$this->configuration->getEncryptionKey()) {
             return $plainData;
@@ -78,7 +78,7 @@ trait HandlerTrait
      *
      * @return string
      */
-    protected function decryptSessionData(string $encryptedData) : string
+    protected function decryptSessionData(string $encryptedData): string
     {
         if ($encryptedData === '') {
             return serialize([]);

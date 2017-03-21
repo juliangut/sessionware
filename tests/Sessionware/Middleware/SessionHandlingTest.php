@@ -90,7 +90,7 @@ class SessionHandlingTest extends SessionTestCase
 
         $this->configuration = $configuration;
         $this->request = ServerRequestFactory::fromGlobals();
-        $this->response = new Response;
+        $this->response = new Response();
     }
 
     public function testSessionNotStarted()
