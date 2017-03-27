@@ -144,8 +144,8 @@ class Configuration
             'cookieSecure',
             'cookieHttpOnly',
             'cookieSameSite',
-            'timeoutKey',
             'encryptionKey',
+            'timeoutKey',
         ];
 
         foreach ($configs as $config) {
@@ -384,12 +384,29 @@ class Configuration
     /**
      * Set session encryption key.
      *
-     * @param Key $encryptionKey
+     * @param Key|string $encryptionKey
+     *
+     * @throws \Defuse\Crypto\Exception\BadFormatException
+     * @throws \InvalidArgumentException
      *
      * @return self
      */
-    public function setEncryptionKey(Key $encryptionKey): self
+    public function setEncryptionKey($encryptionKey): self
     {
+        if (is_string($encryptionKey)) {
+            $encryptionKey = Key::loadFromAsciiSafeString($encryptionKey);
+        }
+
+        if (!$encryptionKey instanceof Key) {
+            throw new \InvalidArgumentException(
+                sprintf(
+                    'Encryption key must be a string or an instance of %s. %s given',
+                    Key::class,
+                    gettype($encryptionKey)
+                )
+            );
+        }
+
         $this->encryptionKey = $encryptionKey;
 
         return $this;

@@ -84,7 +84,8 @@ class ConfigurationTest extends TestCase
             'cookieHttpOnly' => true,
             'cookieSameSite' => Configuration::SAME_SITE_STRICT,
             'timeoutKey' => '__CUSTOM_TIMEOUT__',
-            'encryptionKey' => Key::createNewRandomKey(),
+            'encryptionKey' => 'def000005672fe08126322d5868e2695aff84cade023d6e776986bcd6137ee6423cf' .
+                               'ce4b3c9e11621305bb3d84d1c45382ba35b4c993d9f287ca4fcd2c0155b1a1ffbe42',
         ];
 
         $configuration = new Configuration($configs);
@@ -97,7 +98,7 @@ class ConfigurationTest extends TestCase
         self::assertTrue($configuration->isCookieSecure());
         self::assertTrue($configuration->isCookieHttpOnly());
         self::assertEquals($configs['cookieSameSite'], $configuration->getCookieSameSite());
-        self::assertEquals($configs['encryptionKey'], $configuration->getEncryptionKey());
+        self::assertInstanceOf(Key::class, $configuration->getEncryptionKey());
         self::assertEquals($configs['timeoutKey'], $configuration->getTimeoutKey());
     }
 
@@ -135,6 +136,15 @@ class ConfigurationTest extends TestCase
     public function testInvalidCookieSameSite()
     {
         new Configuration(['cookieSameSite' => 'unknown']);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Encryption key must be a string or an instance of Defuse\Crypto\Key. integer given
+     */
+    public function testInvalidEncryptionKey()
+    {
+        new Configuration(['encryptionKey' => 100]);
     }
 
     /**
