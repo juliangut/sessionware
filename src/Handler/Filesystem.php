@@ -80,7 +80,7 @@ class Filesystem implements Handler
         $sessionFile = $this->getSessionFile($sessionId);
 
         if (file_exists($sessionFile)) {
-            unlink($sessionFile);
+            return unlink($sessionFile);
         }
 
         return false;
