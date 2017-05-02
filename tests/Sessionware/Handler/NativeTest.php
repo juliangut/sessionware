@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Jgut\Sessionware\Tests\Handler;
 
-use Jgut\Sessionware\Configuration;
 use Jgut\Sessionware\Handler\Native;
 use Jgut\Sessionware\Tests\SessionTestCase;
 
